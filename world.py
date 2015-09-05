@@ -21,6 +21,7 @@ AAF_PRE65 = 0.072 # CPP actuarial adjustment factor for early retirement - ages 
 AAF_POST65 = 0.084 # CPP actuarial adjustment factor for delayed retirement, after age 65, benefit increment per year
 CPP_GENERAL_DROPOUT_FACTOR = 0.17 # CPP general dropout fraction: fraction of the earnings years that can be dropped out
 CPP_RETIREMENT_BENEFIT_FRACTION = 0.25 # CPP fraction of earnings replaced (capped)
+EARNINGS_YMPE_FRACTION = 1
 
 # EI (Employment Insurance) parameters
 EI_MAX_INSURABLE_EARNINGS = 48600 # Maximum Insurable Earnings in 2014, grows at 0.01 per year thereafter, (*=(1+PARGE))
@@ -29,6 +30,7 @@ EI_PREMIUM_RATE = 0.0192 # Employment Insurance Premium Rate, all years
 EI_REPAYMENT_BASE_FRACTION = 1.25 # Fraction of EI_MAX_INSURABLE_EARNINGS; income beyond this leads to EI benefit repayment
 EI_REPAYMENT_REDUCTION_RATE = 0.3 # EI benefit is clawed back at this rate for every dollar of income beyond 
                                   # EI_REPAYMENT_BASE_FRACTION * EI_MAX_INSURABLE_EARNINGS
+EI_PREINITIAL_YEAR_INSURABLE_EARNINGS = min(EARNINGS_YMPE_FRACTION * YMPE, EI_MAX_INSURABLE_EARNINGS) # Insurable earnings for the year prior to the base year
 								  
 # RRSP (Registered Retirement Savings Plan) Parameters (also RRIF after age 71)
 RRSP_LIMIT = 24270 # Maximum NEW RRSP room in a year; contributions are permitted up to the level of RRSP room
@@ -420,4 +422,3 @@ CED_PROPORTION = ExtendedDict(None,
  (109, 0.51296),
  (110, 1.00000)])
 
-EARNINGS_YMPE_FRACTION = 1

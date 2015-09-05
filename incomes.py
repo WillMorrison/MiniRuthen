@@ -54,6 +54,13 @@ class EI(Income):
   def __init__(self):
     self.taxable = True
     self.income_type = INCOME_TYPE_EI
+		self.was_employed_last_year = True
+
+	def CalcAmount(self, year_rec):
+		if not year_rec.is_employed and self.was_employed_last_year and not year_rec.is_retired:
+			pass  # TODO: EI amount calculations
+		else:
+			0
 
 
 class CPP(Income):
