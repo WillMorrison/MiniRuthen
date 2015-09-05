@@ -26,7 +26,7 @@ class Person(object):
 
     year_rec = utils.YearRecord()
     year_rec.age = self.age
-    year_rec.year = 
+    year_rec.year = self.year 
 
   def CalcIncomeTax(self, year_rec):
     """Calculates the amount of income tax to be paid"""
