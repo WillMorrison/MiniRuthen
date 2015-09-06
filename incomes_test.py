@@ -45,6 +45,81 @@ class IncomeTest(unittest.TestCase):
     self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_EARNINGS),
                   year_rec.incomes)
 
+	def testEIBenefitsEmployedInsuredWorking(self):
+		income = incomes.EI()
+		last_year_rec = utils.YearRecord()
+		last_year_rec.is_employed = True
+		last_year_rec.insurable_earnings = 100
+		this_year_rec = utils.YearRecord()
+		this_year_rec.is_employed = True
+		this_year_rec.is_retired = False
+		income.AnnualUpdate(last_year_rec)
+		amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
+		self.assertEqual(amount, 0)
+		self.assertEqual(taxable, True)
+		self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_EI),
+									this_year_rec.incomes)
+
+	def testEIBenefitsUnemployedInsuredWorking(self):
+		income = incomes.EI()
+		last_year_rec = utils.YearRecord()
+		last_year_rec.is_employed = True
+		last_year_rec.insurable_earnings = 100
+		this_year_rec = utils.YearRecord()
+		this_year_rec.is_employed = False
+		this_year_rec.is_retired = False
+		income.AnnualUpdate(last_year_rec)
+		amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
+		self.assertEqual(amount, 55)
+		self.assertEqual(taxable, True)
+		self.assertIn(incomes.IncomeReceipt(55, incomes.INCOME_TYPE_EI),
+									this_year_rec.incomes)
+
+	def testEIBenefitsUnemployedUninsuredWorking(self):
+		income = incomes.EI()
+		last_year_rec = utils.YearRecord()
+		last_year_rec.is_employed = False
+		last_year_rec.insurable_earnings = 0
+		this_year_rec = utils.YearRecord()
+		this_year_rec.is_employed = False
+		this_year_rec.is_retired = False
+		income.AnnualUpdate(last_year_rec)
+		amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
+		self.assertEqual(amount, 0)
+		self.assertEqual(taxable, True)
+		self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_EI),
+									this_year_rec.incomes)
+
+	def testEIBenefitsUnemployedInsuredRetired(self):
+		income = incomes.EI()
+		last_year_rec = utils.YearRecord()
+		last_year_rec.is_employed = True
+		last_year_rec.insurable_earnings = 100
+		this_year_rec = utils.YearRecord()
+		this_year_rec.is_employed = False
+		this_year_rec.is_retired = True
+		income.AnnualUpdate(last_year_rec)
+		amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
+		self.assertEqual(amount, 0)
+		self.assertEqual(taxable, True)
+		self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_EI),
+									this_year_rec.incomes)
+
+	def testEIBenefitsUnemployedUninsuredRetired(self):
+		income = incomes.EI()
+		last_year_rec = utils.YearRecord()
+		last_year_rec.is_employed = False
+		last_year_rec.insurable_earnings = 0
+		this_year_rec = utils.YearRecord()
+		this_year_rec.is_employed = False
+		this_year_rec.is_retired = True
+		income.AnnualUpdate(last_year_rec)
+		amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
+		self.assertEqual(amount, 0)
+		self.assertEqual(taxable, True)
+		self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_EI),
+									this_year_rec.incomes)
+
 
 if __name__ == '__main__':
   unittest.main()
