@@ -2,6 +2,11 @@
 
 import collections
 
+
+# The year at which subject turns 30 and the simulated lifetime starts
+BASE_YEAR = 2014
+START_AGE = 30
+
 # OAS (Old Age Security benefit) Parameters
 OAS_BENEFIT = 6676.69 # Full-year OAS benefit, 2014 and subsequent years
 OAS_CLAWBACK_EXEMPTION = 71592 # Income level beyond which OAS gets clawed back, all years
@@ -17,11 +22,17 @@ YMPE = 5250 # Year's Maximum Pensionable Earnings in 2014, grows at 0.01 per yea
 YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE
 MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
 CPP_EMPLOYEE_RATE = 0.0495 # CPP Contribution Rate, Employee component
+CPP_EXPECTED_RETIREMENT_AGE = 65 # Age at which there is no actuarial adjustment to the CPP benefits
 AAF_PRE65 = 0.072 # CPP actuarial adjustment factor for early retirement - ages 60 - 64, benefit decrement per year
 AAF_POST65 = 0.084 # CPP actuarial adjustment factor for delayed retirement, after age 65, benefit increment per year
+AAF_POST65_YEARS_CAP = 5 # Years after retirement that delayed retirement benefit increment per year caps at
 CPP_GENERAL_DROPOUT_FACTOR = 0.17 # CPP general dropout fraction: fraction of the earnings years that can be dropped out
 CPP_RETIREMENT_BENEFIT_FRACTION = 0.25 # CPP fraction of earnings replaced (capped)
 EARNINGS_YMPE_FRACTION = 1
+PRE_SIM_CPP_YEARS = START_AGE - 18
+PRE_SIM_ZERO_EARNING_YEARS = 4
+PRE_SIM_POSITIVE_EARNING_YEARS = 8
+PRE_SIM_SUM_YMPE_FRACTIONS = 6
 
 # EI (Employment Insurance) parameters
 EI_MAX_INSURABLE_EARNINGS = 48600 # Maximum Insurable Earnings in 2014, grows at 0.01 per year thereafter, (*=(1+PARGE))
@@ -131,15 +142,6 @@ HST_RATE = 0.13 # Harmonized Sales Tax rate is the sum of 0.05 GST rate(federal)
 DISCOUNT_RATE = 0.03 # Annual discount rate applied to consumption to reflect time preference
 PARGE = 0.01 # Projected annual real growth in earnings
 YMPE_STDDEV = 0.18 # Standard deviation for earnings as a fraction of current YMPE
-
-# The year at which subject turns 30 and the simulated lifetime starts
-BASE_YEAR = 2014
-START_AGE = 30
-
-PRE_SIM_CPP_YEARS = START_AGE - 18
-PRE_SIM_ZERO_EARNING_YEARS = 4
-PRE_SIM_POSITIVE_EARNING_YEARS = 8
-PRE_SIM_SUM_YMPE_FRACTIONS = 6
 
 MALE_MORTALITY = ExtendedDict(None,
 [(0, 0.00577),

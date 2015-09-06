@@ -23,14 +23,17 @@ class Person(object):
 
     Returns a partially initialized year record.
     """
+		# TODO Fate
 
     year_rec = utils.YearRecord()
     year_rec.age = self.age
     year_rec.year = self.year
 
     year_rec.is_dead = False  # TODO: Reap souls
-    year_rec.is_employed = not self.is_retired # TODO: Calculate possiblity of unemployment
-    year_rec.is_retired = self.retired
+    year_rec.is_employed = not self.is_retired  # TODO: Calculate possiblity of unemployment
+    year_rec.is_retired = self.retired  # TODO proper retirement calculations
+
+		# TODO Update CPP upon retirement
 
   def CalcIncomeTax(self, year_rec):
     """Calculates the amount of income tax to be paid"""
@@ -50,7 +53,8 @@ class Person(object):
     # DO EI/CPP contributions
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type = incomes.INCOME_TYPE_EARNINGS)
-    cpp_contribution = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), max(0, earnings - world.YBE)) * world.CPP_EMPLOYEE_RATE
+		year_rec.pensionable_earnings = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), max(0, earnings - world.YBE))
+    cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
 		year_rec.insurable_earnings = min(utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE), earnings)
     ei_contribution = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
@@ -66,15 +70,15 @@ class Person(object):
 
   def AnnualReview(self, year_rec):
     """End of year calculations for a live person"""
-    self.age++
-    self.year++
+    self.age += 1
+    self.year += 1
 
   def EndOfLifeCalcs(self):
     """Calculations that happen upon death"""
 
   def DoYear(self):
     """Execute one year of life"""
-    year_rec =self. AnnualSetup()
+    year_rec = self.AnnualSetup()
     if not year_rec.is_dead:
       year_rec = self.MeddleWithCash(year_rec)
       self.AnnualReview(year_rec)
