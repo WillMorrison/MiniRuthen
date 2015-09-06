@@ -70,10 +70,13 @@ class IncomeTest(unittest.TestCase):
     this_year_rec.is_retired = False
     income.AnnualUpdate(last_year_rec)
     amount, taxable, year_rec = income.GiveMeMoney(this_year_rec)
-    self.assertEqual(amount, 55)
+    self.assertAlmostEqual(amount, 55)
     self.assertEqual(taxable, True)
-    self.assertIn(incomes.IncomeReceipt(55, incomes.INCOME_TYPE_EI),
-                  this_year_rec.incomes)
+		# done differently due to floating point equality checks
+    self.assertEqual(this_year_rec.incomes[0].income_type, incomes.INCOME_TYPE_EI)
+    self.assertAlmostEqual(this_year_rec.incomes[0].amount, 55)
+    self.assertEqual(len(this_year_rec.incomes), 1)
+                  
 
   def testEIBenefitsUnemployedUninsuredWorking(self):
     income = incomes.EI()
