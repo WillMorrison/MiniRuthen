@@ -188,6 +188,37 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 63
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 11849.148131491)
+
+  def testOASBeforeRetirement(self):
+    income = incomes.OAS()
+    year_rec = utils.YearRecord()
+    year_rec.age = 60
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, 0)
+    self.assertEqual(taxable, True)
+    self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_OAS),
+                  year_rec.incomes)
+
+  def testOASAtRetirement(self):
+    income = incomes.OAS()
+    year_rec = utils.YearRecord()
+    year_rec.age = 65
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, world.OAS_BENEFIT)
+    self.assertEqual(taxable, True)
+    self.assertIn(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS),
+                  year_rec.incomes)
+
+  def testOASAfterRetirement(self):
+    income = incomes.OAS()
+    year_rec = utils.YearRecord()
+    year_rec.age = 70
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, world.OAS_BENEFIT)
+    self.assertEqual(taxable, True)
+    self.assertIn(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS),
+                  year_rec.incomes)
+
     
 
 

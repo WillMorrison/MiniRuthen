@@ -116,6 +116,12 @@ class OAS(Income):
     self.taxable = True
     self.income_type = INCOME_TYPE_OAS
 
+  def CalcAmount(self, year_rec):
+    if year_rec.age >= world.CPP_EXPECTED_RETIREMENT_AGE:
+      return world.OAS_BENEFIT
+    else:
+      return 0
+
 
 class GIS(Income):
   
