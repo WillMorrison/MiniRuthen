@@ -346,7 +346,7 @@ class NonRegisteredTest(unittest.TestCase):
     self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
     self.assertEqual(len(year_rec.tax_receipts), 1)
 
-  def testNonRegisteredUpdatePositiveGrowthNegativeUnrealizedGains(self):
+  def testNonRegisteredUpdateNegativeGrowthNegativeUnrealizedGains(self):
     fund = funds.NonRegistered()
     fund.amount = 20
     fund.unrealized_gains = -10
