@@ -134,7 +134,9 @@ DIVIDEND_TAX_CREDIT_RATE = 0.150198 # Fraction of dividends claimable as a non-r
 
 # Economic Parameters
 MEAN_INVESTMENT_RETURN = 0.0532 # Mean of normal distribution for returns to funds
-STD_INVESTMENT_RETURN = 0.1030 # Standard deviation for normal distributino for returns to funds
+STD_INVESTMENT_RETURN = 0.1030 # Standard deviation for normal distribution for returns to funds
+IMMEDIATELY_REALIZED_GAINS_FRACTION = 0.3 # Fraction of new growth that is immediately realized 
+UNREALIZED_GAINS_REALIZATION_FRACTION = 0.2 # Fraction of unrealized gains that become realized each year
 
 # Other Miscellaneous Parameters
 LICO_SINGLE_CITY_W = 24312 # Low Income Cut-Off in 2014, grows at 0.01 per year thereafter

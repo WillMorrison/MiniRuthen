@@ -81,9 +81,7 @@ class Fund(object):
     will not return a number so negative it would cause the fund amount to go
     negative.
     """
-    growth = max(self.amount * year_rec.growth_rate, -self.amount)
-    year_rec.tax_receipts.append(TaxReceipt(growth, self.fund_type))
-    return growth
+    return max(self.amount * year_rec.growth_rate, -self.amount)
 
 class TFSA(Fund):
 
@@ -128,7 +126,11 @@ class NonRegistered(Fund):
   def Update(self, year_rec):
     growth = self.Growth(year_rec)
     self.amount += growth
-    self.unrealized_gains += max(growth, -self.unrealized_gains)
+    realized_gains = world.UNREALIZED_GAINS_REALIZATION_FRACTION * self.unrealized_gains
+    self.unrealized_gains -= realized_gains
+    new_realized_gains = growth * world.IMMEDIATELY_REALIZED_GAINS_FRACTION
+    year_rec.tax_receipts.append(TaxReceipt(realized_gains + new_realized_gains, self.fund_type))
+    self.unrealized_gains += max(growth - new_realized_gains, -self.unrealized_gains)
 
 
 class RRSPBridging(Fund):
