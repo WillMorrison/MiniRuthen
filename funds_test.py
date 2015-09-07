@@ -268,6 +268,17 @@ class NonRegisteredTest(unittest.TestCase):
     self.assertEqual(fund.unrealized_gains, -2.5)
     self.assertIn(funds.WithdrawReceipt(15, -7.5, funds.FUND_TYPE_NONREG),
                   year_rec.withdrawals)
+  
+  def testNonRegisteredWithdrawReallyNegativeUnrealizedGains(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = -25
+    withdrawn, gains, year_rec = fund.Withdraw(20, utils.YearRecord())
+    self.assertEqual(withdrawn, 20)
+    self.assertEqual(fund.amount, 0)
+    self.assertEqual(fund.unrealized_gains, 0)
+    self.assertIn(funds.WithdrawReceipt(20, -25, funds.FUND_TYPE_NONREG),
+                  year_rec.withdrawals)
 
   def testNonRegisteredUpdateGainsIncrement(self):
     fund = funds.NonRegistered()
