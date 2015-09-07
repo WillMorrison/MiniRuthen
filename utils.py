@@ -9,6 +9,8 @@ class YearRecord(object):
     self.withdrawals = []
     self.deposits = []
     self.incomes = []
+    self.tax_receipts = []
+    self.last_year_tax_receipts = []
 
     self.year = world.BASE_YEAR
     self.growth_rate = 0

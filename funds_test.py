@@ -104,6 +104,8 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0
     self.assertEqual(fund.Growth(year_rec), 0)
+    self.assertIn(funds.TaxReceipt(0, funds.FUND_TYPE_NONE),
+                  year_rec.tax_receipts)
 
   def testGrowthPositive(self):
     fund = funds.Fund()
@@ -111,6 +113,8 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.1
     self.assertEqual(fund.Growth(year_rec), 2)
+    self.assertIn(funds.TaxReceipt(2, funds.FUND_TYPE_NONE),
+                  year_rec.tax_receipts)
 
   def testGrowthNegative(self):
     fund = funds.Fund()
@@ -118,6 +122,8 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = -0.1
     self.assertEqual(fund.Growth(year_rec), -2)
+    self.assertIn(funds.TaxReceipt(-2, funds.FUND_TYPE_NONE),
+                  year_rec.tax_receipts)
 
   def testGrowthVeryNegative(self):
     fund = funds.Fund()
@@ -125,6 +131,8 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = -1.2
     self.assertEqual(fund.Growth(year_rec), -20)
+    self.assertIn(funds.TaxReceipt(-20, funds.FUND_TYPE_NONE),
+                  year_rec.tax_receipts)
 
 
 class TFSATest(unittest.TestCase):
@@ -165,6 +173,8 @@ class TFSATest(unittest.TestCase):
     self.assertEqual(fund.room, world.TFSA_ANNUAL_CONTRIBUTION_LIMIT)
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.unrealized_gains, 0)
+    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_TFSA),
+                  year_rec.tax_receipts)
 
 
 class RRSPTest(unittest.TestCase):
@@ -233,6 +243,8 @@ class RRSPTest(unittest.TestCase):
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.room, 1800)
     self.assertEqual(fund.unrealized_gains, 0)
+    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_RRSP),
+                  year_rec.tax_receipts)
 
 
 class NonRegisteredTest(unittest.TestCase):
@@ -267,6 +279,8 @@ class NonRegisteredTest(unittest.TestCase):
     fund.Update(year_rec)
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.unrealized_gains, 14)
+    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_NONREG),
+                  year_rec.tax_receipts)
 
   def testNonRegisteredUpdateGainsDecrement(self):
     fund = funds.NonRegistered()
@@ -277,6 +291,8 @@ class NonRegisteredTest(unittest.TestCase):
     fund.Update(year_rec)
     self.assertEqual(fund.amount, 16)
     self.assertEqual(fund.unrealized_gains, 6)
+    self.assertIn(funds.TaxReceipt(-4, funds.FUND_TYPE_NONREG),
+                  year_rec.tax_receipts)
 
   def testNonRegisteredUpdateGainsDecrementToZero(self):
     fund = funds.NonRegistered()
@@ -287,6 +303,8 @@ class NonRegisteredTest(unittest.TestCase):
     fund.Update(year_rec)
     self.assertEqual(fund.amount, 8)
     self.assertEqual(fund.unrealized_gains, 0)
+    self.assertIn(funds.TaxReceipt(-12, funds.FUND_TYPE_NONREG),
+                  year_rec.tax_receipts)
 
 
 class RRSPBridgingTest(unittest.TestCase):

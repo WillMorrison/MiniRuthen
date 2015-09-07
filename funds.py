@@ -18,6 +18,7 @@ FUND_TYPE_BRIDGING = "RRSP Bridging"
 # Receipts go into year records
 DepositReceipt = collections.namedtuple('DepositReceipt', ('amount', 'fund_type'))
 WithdrawReceipt = collections.namedtuple('WithdrawReceipt', ('amount', 'gains', 'fund_type'))
+TaxReceipt = collections.namedtuple('TaxReceipt', ('growth', 'fund_type'))
 
 
 class Fund(object):
@@ -80,7 +81,9 @@ class Fund(object):
     will not return a number so negative it would cause the fund amount to go
     negative.
     """
-    return max(self.amount * year_rec.growth_rate, -self.amount)
+    growth = max(self.amount * year_rec.growth_rate, -self.amount)
+    year_rec.tax_receipts.append(TaxReceipt(growth, self.fund_type))
+    return growth
 
 class TFSA(Fund):
 
