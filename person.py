@@ -53,7 +53,12 @@ class Person(object):
     # DO EI/CPP contributions
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type = incomes.INCOME_TYPE_EARNINGS)
-		year_rec.pensionable_earnings = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), max(0, earnings - world.YBE))
+		
+		if earnings - world.YBE < 0:
+			cpp_effective_earnings = 0
+		else:
+			cpp_effective_earnings = earnings
+		year_rec.pensionable_earnings = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), cpp_effective_earnings)
     cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
 		year_rec.insurable_earnings = min(utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE), earnings)
