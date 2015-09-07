@@ -97,7 +97,8 @@ class CPP(Income):
     dropout_years = world.CPP_GENERAL_DROPOUT_FACTOR * working_years
     cpp_earning_history_length = working_years - dropout_years
     whole_year_index = math.floor(cpp_earning_history_length)
-    cpp_average_earnings = sum(self.ympe_fractions[:whole_year_index]) + self.ympe_fractions[whole_year_index]*(cpp_earning_history_length - whole_year_index)
+    cpp_average_earnings = (sum(self.ympe_fractions[:whole_year_index]) +
+                            self.ympe_fractions[whole_year_index]*(cpp_earning_history_length - whole_year_index)) / cpp_earning_history_length
     indexed_mpea = utils.Indexed(world.MPEA, person.age - world.START_AGE + world.BASE_YEAR, 1 + world.PARGE)
 
     if person.age == world.CPP_EXPECTED_RETIREMENT_AGE:
