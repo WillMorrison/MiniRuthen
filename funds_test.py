@@ -104,8 +104,6 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0
     self.assertEqual(fund.Growth(year_rec), 0)
-    self.assertIn(funds.TaxReceipt(0, funds.FUND_TYPE_NONE),
-                  year_rec.tax_receipts)
 
   def testGrowthPositive(self):
     fund = funds.Fund()
@@ -113,8 +111,6 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.1
     self.assertEqual(fund.Growth(year_rec), 2)
-    self.assertIn(funds.TaxReceipt(2, funds.FUND_TYPE_NONE),
-                  year_rec.tax_receipts)
 
   def testGrowthNegative(self):
     fund = funds.Fund()
@@ -122,8 +118,6 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = -0.1
     self.assertEqual(fund.Growth(year_rec), -2)
-    self.assertIn(funds.TaxReceipt(-2, funds.FUND_TYPE_NONE),
-                  year_rec.tax_receipts)
 
   def testGrowthVeryNegative(self):
     fund = funds.Fund()
@@ -131,8 +125,6 @@ class FundTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.growth_rate = -1.2
     self.assertEqual(fund.Growth(year_rec), -20)
-    self.assertIn(funds.TaxReceipt(-20, funds.FUND_TYPE_NONE),
-                  year_rec.tax_receipts)
 
 
 class TFSATest(unittest.TestCase):
@@ -173,8 +165,6 @@ class TFSATest(unittest.TestCase):
     self.assertEqual(fund.room, world.TFSA_ANNUAL_CONTRIBUTION_LIMIT)
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.unrealized_gains, 0)
-    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_TFSA),
-                  year_rec.tax_receipts)
 
 
 class RRSPTest(unittest.TestCase):
@@ -243,8 +233,6 @@ class RRSPTest(unittest.TestCase):
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.room, 1800)
     self.assertEqual(fund.unrealized_gains, 0)
-    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_RRSP),
-                  year_rec.tax_receipts)
 
 
 class NonRegisteredTest(unittest.TestCase):
@@ -269,32 +257,57 @@ class NonRegisteredTest(unittest.TestCase):
     self.assertEqual(fund.unrealized_gains, 2.5)
     self.assertIn(funds.WithdrawReceipt(15, 7.5, funds.FUND_TYPE_NONREG),
                   year_rec.withdrawals)
+  
+  def testNonRegisteredWithdrawNegativeUnrealizedGains(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = -10
+    withdrawn, gains, year_rec = fund.Withdraw(15, utils.YearRecord())
+    self.assertEqual(withdrawn, 15)
+    self.assertEqual(fund.amount, 5)
+    self.assertEqual(fund.unrealized_gains, -2.5)
+    self.assertIn(funds.WithdrawReceipt(15, -7.5, funds.FUND_TYPE_NONREG),
+                  year_rec.withdrawals)
 
-  def testNonRegisteredUpdate(self):
+  def testNonRegisteredUpdateGainsIncrement(self):
     fund = funds.NonRegistered()
     fund.amount = 20
     fund.unrealized_gains = 10
     year_rec = utils.YearRecord()
-    year_rec.growth_rate = 0.2
+    year_rec.growth_rate = 0.4
     fund.Update(year_rec)
-    self.assertEqual(fund.amount, 24)
-    self.assertEqual(fund.unrealized_gains, 14)
-    self.assertIn(funds.TaxReceipt(4, funds.FUND_TYPE_NONREG),
+    self.assertEqual(fund.amount, 28)
+    self.assertEqual(fund.unrealized_gains, 13.6)
+    self.assertIn(funds.TaxReceipt(4.4, funds.FUND_TYPE_NONREG),
                   year_rec.tax_receipts)
+
+  def testNonRegisteredUpdateZeroGrowth(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = 10
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = 0
+    fund.Update(year_rec)
+    self.assertEqual(fund.amount, 20)
+    self.assertAlmostEqual(fund.unrealized_gains, 8)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, 2)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
 
   def testNonRegisteredUpdateGainsDecrement(self):
     fund = funds.NonRegistered()
     fund.amount = 20
     fund.unrealized_gains = 10
     year_rec = utils.YearRecord()
-    year_rec.growth_rate = -0.2
+    year_rec.growth_rate = -0.4
     fund.Update(year_rec)
-    self.assertEqual(fund.amount, 16)
-    self.assertEqual(fund.unrealized_gains, 6)
-    self.assertIn(funds.TaxReceipt(-4, funds.FUND_TYPE_NONREG),
-                  year_rec.tax_receipts)
+    self.assertEqual(fund.amount, 12)
+    self.assertAlmostEqual(fund.unrealized_gains, 2.4)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, -0.4)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
 
-  def testNonRegisteredUpdateGainsDecrementToZero(self):
+  def testNonRegisteredUpdateGainsDecrementPastZero(self):
     fund = funds.NonRegistered()
     fund.amount = 20
     fund.unrealized_gains = 10
@@ -302,9 +315,49 @@ class NonRegisteredTest(unittest.TestCase):
     year_rec.growth_rate = -0.6
     fund.Update(year_rec)
     self.assertEqual(fund.amount, 8)
-    self.assertEqual(fund.unrealized_gains, 0)
-    self.assertIn(funds.TaxReceipt(-12, funds.FUND_TYPE_NONREG),
-                  year_rec.tax_receipts)
+    self.assertAlmostEqual(fund.unrealized_gains, -0.4)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, -1.6)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
+
+  def testNonRegisteredUpdateZeroGrowthNegativeUnrealizedGains(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = -10
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = 0
+    fund.Update(year_rec)
+    self.assertEqual(fund.amount, 20)
+    self.assertAlmostEqual(fund.unrealized_gains, -8)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, -2)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
+
+  def testNonRegisteredUpdatePositiveGrowthNegativeUnrealizedGains(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = -10
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = 0.4
+    fund.Update(year_rec)
+    self.assertEqual(fund.amount, 28)
+    self.assertAlmostEqual(fund.unrealized_gains, -2.4)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, 0.4)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
+
+  def testNonRegisteredUpdatePositiveGrowthNegativeUnrealizedGains(self):
+    fund = funds.NonRegistered()
+    fund.amount = 20
+    fund.unrealized_gains = -10
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = -0.4
+    fund.Update(year_rec)
+    self.assertEqual(fund.amount, 12)
+    self.assertAlmostEqual(fund.unrealized_gains, -13.6)
+    self.assertAlmostEqual(year_rec.tax_receipts[0].gross_gain, -4.4)
+    self.assertEqual(year_rec.tax_receipts[0].fund_type, funds.FUND_TYPE_NONREG)
+    self.assertEqual(len(year_rec.tax_receipts), 1)
 
 
 class RRSPBridgingTest(unittest.TestCase):

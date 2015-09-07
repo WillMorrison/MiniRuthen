@@ -18,7 +18,7 @@ FUND_TYPE_BRIDGING = "RRSP Bridging"
 # Receipts go into year records
 DepositReceipt = collections.namedtuple('DepositReceipt', ('amount', 'fund_type'))
 WithdrawReceipt = collections.namedtuple('WithdrawReceipt', ('amount', 'gains', 'fund_type'))
-TaxReceipt = collections.namedtuple('TaxReceipt', ('growth', 'fund_type'))
+TaxReceipt = collections.namedtuple('TaxReceipt', ('gross_gain', 'fund_type'))
 
 
 class Fund(object):
@@ -130,7 +130,7 @@ class NonRegistered(Fund):
     self.unrealized_gains -= realized_gains
     new_realized_gains = growth * world.IMMEDIATELY_REALIZED_GAINS_FRACTION
     year_rec.tax_receipts.append(TaxReceipt(realized_gains + new_realized_gains, self.fund_type))
-    self.unrealized_gains += max(growth - new_realized_gains, -self.unrealized_gains)
+    self.unrealized_gains += growth - new_realized_gains
 
 
 class RRSPBridging(Fund):
