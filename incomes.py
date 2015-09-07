@@ -1,6 +1,7 @@
 """This module contains classes for various types of incomes"""
 
 import collections
+import math
 import random
 import world
 import utils
@@ -80,33 +81,24 @@ class CPP(Income):
     self.taxable = True
     self.income_type = INCOME_TYPE_CPP
     self.benefit_amount = 0
-    self.working_years = world.PRE_SIM_CPP_YEARS
-    self.positive_earnings_years = world.PRE_SIM_POSITIVE_EARNING_YEARS
-    self.zero_earnings_years = world.PRE_SIM_ZERO_EARNING_YEARS
-    self.sum_ympe_fractions = world.PRE_SIM_SUM_YMPE_FRACTIONS
+    self.ympe_fractions = world.PRE_SIM_YMPE_FRACTIONS[:]
 
   def CalcAmount(self, year_rec):
     return self.benefit_amount
 
   def AnnualUpdate(self, year_rec):
     if not year_rec.is_retired:
-      self.working_years += 1
-      if year_rec.pensionable_earnings > 0:
-        self.positive_earnings_years += 1
-      else:
-        self.zero_earnings_years += 1
-      self.sum_ympe_fractions = year_rec.pensionable_earnings / utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
+      self.ympe_fractions.append(year_rec.pensionable_earnings / utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE))
 
   def OnRetirement(self, person):
     cpp_avg_earnings = 0
-    dropout_years = world.CPP_GENERAL_DROPOUT_FACTOR * self.working_years
-    cpp_earning_history_length = self.working_years - dropout_years
+    self.ympe_fractions.sort(reverse=True)
+    working_years = len(self.ympe_fractions)
+    dropout_years = world.CPP_GENERAL_DROPOUT_FACTOR * working_years
+    cpp_earning_history_length = working_years - dropout_years
+    whole_year_index = math.floor(cpp_earning_history_length)
+    cpp_average_earnings = sum(self.ympe_fractions[:whole_year_index]) + self.ympe_fractions[whole_year_index]*(cpp_earning_history_length - whole_year_index)
     indexed_mpea = utils.Indexed(world.MPEA, person.age - world.START_AGE + world.BASE_YEAR, 1 + world.PARGE)
-
-    if dropout_years < self.zero_earnings_years:
-      cpp_average_earnings = self.sum_ympe_fractions / cpp_earning_history_length
-    else:
-      cpp_average_earnings = self.sum_ympe_fractions / self.positive_earnings_years
 
     if person.age == world.CPP_EXPECTED_RETIREMENT_AGE:
       self.benefit_amount = cpp_average_earnings * indexed_mpea * world.CPP_RETIREMENT_BENEFIT_FRACTION
