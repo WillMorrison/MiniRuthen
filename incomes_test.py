@@ -219,7 +219,74 @@ class IncomeTest(unittest.TestCase):
     self.assertIn(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS),
                   year_rec.incomes)
 
-    
+  def testGISBenefitPositiveIncomeNoOAS(self):
+    income = incomes.GIS()
+    income.gis_income = 1000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(0, incomes.INCOME_TYPE_OAS)]
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, 0)
+    self.assertFalse(taxable)
+    self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_GIS),
+                  year_rec.incomes)
+
+  def testGISBenefitPositiveIncome(self):
+    income = incomes.GIS()
+    income.gis_income = 1000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, 8521.37)
+    self.assertFalse(taxable)
+    self.assertIn(incomes.IncomeReceipt(8521.37, incomes.INCOME_TYPE_GIS),
+                  year_rec.incomes)
+
+  def testGISBenefitIncomeBelowClawbackExemption(self):
+    income = incomes.GIS()
+    income.gis_income = 10
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, world.GIS_SINGLES_RATE)
+    self.assertFalse(taxable)
+    self.assertIn(incomes.IncomeReceipt(world.GIS_SINGLES_RATE, incomes.INCOME_TYPE_GIS),
+                  year_rec.incomes)
+
+  def testGISBenefitReallyPositiveIncome(self):
+    income = incomes.GIS()
+    income.gis_income = 20000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, 0)
+    self.assertFalse(taxable)
+    self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_GIS),
+                  year_rec.incomes)
+
+  def testGISAnnualUpdateNoOAS(self):
+    income = incomes.GIS()
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(0, incomes.INCOME_TYPE_OAS)]
+    year_rec.net_income = 5000
+    income.AnnualUpdate(year_rec)
+    self.assertEqual(income.gis_income, 5000)
+  
+  def testGISAnnualUpdateSomeOAS(self):
+    income = incomes.GIS()
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(2500, incomes.INCOME_TYPE_OAS)]
+    year_rec.net_income = 5000
+    income.AnnualUpdate(year_rec)
+    self.assertEqual(income.gis_income, 2500)
+  
+  def testGISAnnualUpdateLotsOfOAS(self):
+    income = incomes.GIS()
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(2500, incomes.INCOME_TYPE_OAS)]
+    year_rec.net_income = 500
+    income.AnnualUpdate(year_rec)
+    self.assertEqual(income.gis_income, 0)
+
 
 
 if __name__ == '__main__':

@@ -128,9 +128,14 @@ class GIS(Income):
   def __init__(self):
     self.taxable = False
     self.income_type = INCOME_TYPE_GIS
+    self.gis_income = 0
 
   def CalcAmount(self, year_rec):
-    pass
+    if sum(receipt.amount for receipt in year_rec.incomes if receipt.income_type == INCOME_TYPE_OAS) > 0:
+      return max(world.GIS_SINGLES_RATE - max(self.gis_income - world.GIS_CLAWBACK_EXEMPTION, 0) * world.GIS_REDUCTION_RATE, 0)
+    else:
+      return 0
 
   def AnnualUpdate(self, year_rec):
-    pass
+    oas_benefit = sum(receipt.amount for receipt in year_rec.incomes if receipt.income_type == INCOME_TYPE_OAS)
+    self.gis_income = max(year_rec.net_income - oas_benefit, 0)
