@@ -7,13 +7,9 @@ class YearRecord(object):
   def __init__(self):
     # Initialize the lists of deposits, withdrawals, and incomes
     self.withdrawals = []
-    self.last_year_withdrawals = []
     self.deposits = []
-    self.last_year_deposits = []
     self.incomes = []
-    self.last_year_incomes = []
     self.tax_receipts = []
-    self.last_year_tax_receipts = []
 
     self.year = world.BASE_YEAR
     self.growth_rate = 0

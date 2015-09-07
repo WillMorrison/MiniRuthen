@@ -66,9 +66,17 @@ class Person(object):
     cash -= cpp_contribution + ei_contribution
 
     # Save
+   
+    # Update funds
+    for fund in self.funds:
+      fund.Update(year_rec)
 
     # Pay income taxes
     cash -= self.CalcIncomeTax(year_rec)
+    
+    # Update incomes
+    for income in self.incomes:
+      income.AnnualUpdate(year_rec)
 
     # Pay sales tax
 
@@ -77,6 +85,7 @@ class Person(object):
     """End of year calculations for a live person"""
     self.age += 1
     self.year += 1
+
 
   def EndOfLifeCalcs(self):
     """Calculations that happen upon death"""

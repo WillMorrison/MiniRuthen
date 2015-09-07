@@ -128,3 +128,9 @@ class GIS(Income):
   def __init__(self):
     self.taxable = False
     self.income_type = INCOME_TYPE_GIS
+
+  def CalcAmount(self, year_rec):
+    pass
+
+  def AnnualUpdate(self, year_rec):
+    pass
