@@ -1,4 +1,4 @@
-import utils
+import collections
 import funds
 import utils
 import world
@@ -6,12 +6,29 @@ import world
 MALE = "m"
 FEMALE = "f"
 
+Strategy = collections.namedtuple("Strategy",
+                                  ["planned_retirement_age",
+                                   "savings_threshold",
+                                   "savings_rate",
+                                   "savings_rrsp_fraction",
+                                   "savings_tfsa_fraction",
+                                   "lico_target_fraction",
+                                   "working_period_drawdown_rrsp_fraction",
+                                   "working_period_drawdown_tfsa_fraction",
+                                   "oas_bridging_fraction",
+                                   "drawdown_ced_fraction",
+                                   "initial_cd_fraction",
+                                   "drawdown_preferred_rrsp_fraction",
+                                   "drawdown_preferred_tfsa_fraction",
+                                   "reinvestment_preference_tfsa_fraction",])
+
 class Person(object):
   
-  def __init__(self, gender=FEMALE):
+  def __init__(self, strategy, gender=FEMALE):
     self.year = world.BASE_YEAR
     self.age = world.START_AGE
     self.gender = gender
+    self.strategy = strategy
     self.employed_last_year = True
     self.retired = False
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]

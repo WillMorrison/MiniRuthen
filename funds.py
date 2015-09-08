@@ -1,6 +1,7 @@
 """ This module contains code related to Funds in miniRuthen."""
 
 import collections
+import utils
 import world
 import incomes
 
@@ -108,7 +109,7 @@ class RRSP(Fund):
     earning_receipts = [receipt for receipt in year_rec.incomes
                         if receipt.income_type == incomes.INCOME_TYPE_EARNINGS]
     earnings_total = sum(receipt.amount for receipt in earning_receipts)
-    self.room += min(world.RRSP_LIMIT, world.RRSP_ACCRUAL_FRACTION * earnings_total)
+    self.room += min(utils.Indexed(world.RRSP_LIMIT, year_rec.year), world.RRSP_ACCRUAL_FRACTION * earnings_total)
 
     # Growth
     self.amount += self.Growth(year_rec)
