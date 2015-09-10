@@ -84,8 +84,8 @@ class Person(object):
 
     # Save
     earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
-    # TODO Proportions will need to take RRSP bridging funds into account when they are added
     proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
+    fund_chain = [f for f in self.funds if f.fund_type == funds.FUND_TYPE_RRSP] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_TFSA] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_NONREG] 
     deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
     cash -= deposited
 
