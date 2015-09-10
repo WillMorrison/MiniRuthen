@@ -139,7 +139,7 @@ IMMEDIATELY_REALIZED_GAINS_FRACTION = 0.3 # Fraction of new growth that is immed
 UNREALIZED_GAINS_REALIZATION_FRACTION = 0.2 # Fraction of unrealized gains that become realized each year
 
 # Other Miscellaneous Parameters
-LICO_SINGLE_CITY_W = 24312 # Low Income Cut-Off in 2014, grows at 0.01 per year thereafter
+LICO_SINGLE_CITY_WP = 24312 # Low Income Cut-Off
 SALES_TAX_EXEMPTION = 8000 # Assumed amount of spending deemed NOT subject to HST sales tax
 HST_RATE = 0.13 # Harmonized Sales Tax rate is the sum of 0.05 GST rate(federal) and 0.08 PST rate(provincial)
 DISCOUNT_RATE = 0.03 # Annual discount rate applied to consumption to reflect time preference

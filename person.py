@@ -13,8 +13,8 @@ Strategy = collections.namedtuple("Strategy",
                                    "savings_rrsp_fraction",
                                    "savings_tfsa_fraction",
                                    "lico_target_fraction",
-                                   "working_period_drawdown_rrsp_fraction",
                                    "working_period_drawdown_tfsa_fraction",
+                                   "working_period_drawdown_nonreg_fraction",
                                    "oas_bridging_fraction",
                                    "drawdown_ced_fraction",
                                    "initial_cd_fraction",
@@ -66,6 +66,17 @@ class Person(object):
       cash += amount
 
     # Do withdrawals
+    if self.is_retired:
+      pass
+    else:
+      if cash < world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction:
+        # Attempt to withdraw difference from savings
+        amount_to_withdraw = world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction - cash
+        proportions = (self.strategy.working_period_drawdown_tfsa_fraction, self.strategy.working_period_drawdown_nonreg_fraction, 1)
+        fund_chain = [f for f in self.funds if f.fund_type == funds.FUND_TYPE_TFSA] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_NONREG] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_RRSP]
+        withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
+        cash += withdrawn
+
 
     # DO EI/CPP contributions
     earnings = sum(receipt.amount for receipt in year_rec.incomes
