@@ -1,4 +1,5 @@
 import collections
+import random
 import funds
 import utils
 import world
@@ -33,6 +34,7 @@ class Person(object):
     self.retired = False
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
     self.funds = [funds.TFSA(), funds.RRSP(), funds.NonRegistered()]
+    self.involuntary_retirement_random = random.random()
     
 
   def AnnualSetup(self):
@@ -58,10 +60,21 @@ class Person(object):
     else:
       year_rec.is_dead = False
 
-    year_rec.is_employed = not self.is_retired  # TODO: Calculate possiblity of unemployment
-    year_rec.is_retired = self.retired  # TODO proper retirement calculations
+    # Retirement
+    if not self.retired:
+      if ((self.age == self.strategy.planned_retirement_age and self.age >= world.MINIMUM_RETIREMENT_AGE) or
+          self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIRMENT_INCREMENT):
+        self.retired = True
+        for income in self.incomes:
+          income.OnRetirement(self)
+    year_rec.is_retired = self.retired
 
-		# TODO Update CPP upon retirement
+    # Employment
+    year_rec.is_employed = not self.is_retired and random.random() > world.UNEMPLOYMENT_PROBABILITY
+
+    # Growth
+    year_rec.growth_rate = random.normalvariate(world.MEAN_INVESTMENT_RETURN, world.STD_INVESTMENT_RETURN)
+
 
   def CalcIncomeTax(self, year_rec):
     """Calculates the amount of income tax to be paid"""
