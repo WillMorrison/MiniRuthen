@@ -42,8 +42,6 @@ class Person(object):
 
     Returns a partially initialized year record.
     """
-		# TODO Fate
-
     year_rec = utils.YearRecord()
     year_rec.age = self.age
     year_rec.year = self.year
@@ -63,7 +61,7 @@ class Person(object):
     # Retirement
     if not self.retired:
       if ((self.age == self.strategy.planned_retirement_age and self.age >= world.MINIMUM_RETIREMENT_AGE) or
-          self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIRMENT_INCREMENT):
+          self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIREMENT_INCREMENT):
         self.retired = True
         for income in self.incomes:
           income.OnRetirement(self)
