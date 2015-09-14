@@ -46,7 +46,18 @@ class Person(object):
     year_rec.age = self.age
     year_rec.year = self.year
 
-    year_rec.is_dead = False  # TODO: Reap souls
+    # Reap souls
+    if self.gender == MALE:
+      p_mortality = world.MALE_MORTALITY[self.age] * world.MORTALITY_MULTIPLIER
+    elif self.gender == FEMALE:
+      p_mortality = world.FEMALE_MORTALITY[self.age] * world.MORTALITY_MULTIPLIER
+
+    if random.random() < p_mortality:
+      year_rec.is_dead = True
+      return year_rec
+    else:
+      year_rec.is_dead = False
+
     year_rec.is_employed = not self.is_retired  # TODO: Calculate possiblity of unemployment
     year_rec.is_retired = self.retired  # TODO proper retirement calculations
 
