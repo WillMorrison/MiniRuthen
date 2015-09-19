@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import funds
 import utils
 import world
@@ -16,23 +17,27 @@ class FundTest(unittest.TestCase):
 
   def testDepositSufficientRoom(self):
     fund = funds.Fund()
-    fund.room = 20
+    fund.GetRoom = unittest.mock.MagicMock(return_value=20)
+    set_room = unittest.mock.MagicMock()
+    fund.SetRoom = set_room
     deposited, year_rec = fund.Deposit(15, utils.YearRecord())
     self.assertEqual(deposited, 15)
     self.assertEqual(fund.amount, 15)
     self.assertIn(funds.DepositReceipt(15, funds.FUND_TYPE_NONE),
                   year_rec.deposits)
-    self.assertEqual(fund.room, 5)
+    set_room.assert_called_with(unittest.mock.ANY, 5)
 
   def testDepositInsufficientRoom(self):
     fund = funds.Fund()
-    fund.room = 10
+    fund.GetRoom = unittest.mock.MagicMock(return_value=10)
+    set_room = unittest.mock.MagicMock()
+    fund.SetRoom = set_room
     deposited, year_rec = fund.Deposit(15, utils.YearRecord())
     self.assertEqual(deposited, 10)
     self.assertEqual(fund.amount, 10)
     self.assertIn(funds.DepositReceipt(10, funds.FUND_TYPE_NONE),
                   year_rec.deposits)
-    self.assertEqual(fund.room, 0)
+    set_room.assert_called_with(unittest.mock.ANY, 0)
     
   def testWithdrawSufficientFunds(self):
     fund = funds.Fund()
@@ -67,9 +72,12 @@ class FundTest(unittest.TestCase):
     fund = funds.Fund()
     fund.amount = 20
     fund.room = 5
+    fund.GetRoom = unittest.mock.MagicMock(return_value=5)
+    set_room = unittest.mock.MagicMock()
+    fund.SetRoom = set_room
     fund.room_replenishes = True
     withdrawn, gains, year_rec = fund.Withdraw(10, utils.YearRecord())
-    self.assertEqual(fund.room, 15)
+    set_room.assert_called_with(unittest.mock.ANY, 15)
 
   def testWithdrawForcedPassive(self):
     fund = funds.Fund()
@@ -129,6 +137,7 @@ class FundTest(unittest.TestCase):
 
 class TFSATest(unittest.TestCase):
 
+  @unittest.skip("Room replenishment needs to be done in person now")
   def testTFSARoom(self):
     fund = funds.TFSA()
     self.assertEqual(fund.room, world.TFSA_INITIAL_CONTRIBUTION_LIMIT)
@@ -138,7 +147,9 @@ class TFSATest(unittest.TestCase):
 
   def testTFSADeposit(self):
     fund = funds.TFSA()
-    deposited, year_rec = fund.Deposit(15, utils.YearRecord())
+    year_rec = utils.YearRecord()
+    year_rec.tfsa_room = 20
+    deposited, year_rec = fund.Deposit(15, year_rec)
     self.assertEqual(deposited, 15)
     self.assertEqual(fund.amount, 15)
     self.assertIn(funds.DepositReceipt(15, funds.FUND_TYPE_TFSA),
@@ -147,28 +158,28 @@ class TFSATest(unittest.TestCase):
   def testTFSAWithdraw(self):
     fund = funds.TFSA()
     fund.amount = 20
-    fund.room = 0
-    withdrawn, gains, year_rec = fund.Withdraw(15, utils.YearRecord())
+    year_rec = utils.YearRecord()
+    year_rec.tfsa_room = 0
+    withdrawn, gains, year_rec = fund.Withdraw(15, year_rec)
     self.assertEqual(withdrawn, 15)
     self.assertEqual(fund.amount, 5)
     self.assertIn(funds.WithdrawReceipt(15, 0, funds.FUND_TYPE_TFSA),
                   year_rec.withdrawals)
-    self.assertEqual(fund.room, 15)
+    self.assertEqual(year_rec.tfsa_room, 15)
 
   def testTFSAUpdate(self):
     fund = funds.TFSA()
     fund.amount = 20
-    fund.room = 0
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.2
     fund.Update(year_rec)
-    self.assertEqual(fund.room, world.TFSA_ANNUAL_CONTRIBUTION_LIMIT)
     self.assertEqual(fund.amount, 24)
     self.assertEqual(fund.unrealized_gains, 0)
 
 
 class RRSPTest(unittest.TestCase):
 
+  @unittest.skip("Room replenishment needs to be done in person now")
   def testRRSPRoom(self):
     fund = funds.RRSP()
     year_rec = utils.YearRecord()
@@ -177,6 +188,7 @@ class RRSPTest(unittest.TestCase):
     fund.Update(year_rec)
     self.assertEqual(fund.room, world.RRSP_INITIAL_LIMIT+1800)
 
+  @unittest.skip("Room replenishment needs to be done in person now")
   def testRRSPRoomLimit(self):
     fund = funds.RRSP()
     year_rec = utils.YearRecord()
@@ -187,24 +199,26 @@ class RRSPTest(unittest.TestCase):
 
   def testRRSPDeposit(self):
     fund = funds.RRSP()
-    fund.room = 20
-    deposited, year_rec = fund.Deposit(15, utils.YearRecord())
+    year_rec = utils.YearRecord()
+    year_rec.rrsp_room = 20
+    deposited, year_rec = fund.Deposit(15, year_rec)
     self.assertEqual(deposited, 15)
     self.assertEqual(fund.amount, 15)
     self.assertIn(funds.DepositReceipt(15, funds.FUND_TYPE_RRSP),
                   year_rec.deposits)
-    self.assertEqual(fund.room, 5)
+    self.assertEqual(year_rec.rrsp_room, 5)
   
   def testRRSPWithdraw(self):
     fund = funds.RRSP()
     fund.amount = 20
-    fund.room = 0
-    withdrawn, gains, year_rec = fund.Withdraw(15, utils.YearRecord())
+    year_rec = utils.YearRecord()
+    year_rec.rrsp_room = 0
+    withdrawn, gains, year_rec = fund.Withdraw(15, year_rec)
     self.assertEqual(withdrawn, 15)
     self.assertEqual(fund.amount, 5)
     self.assertIn(funds.WithdrawReceipt(15, 0, funds.FUND_TYPE_RRSP),
                   year_rec.withdrawals)
-    self.assertEqual(fund.room, 0)
+    self.assertEqual(year_rec.rrsp_room, 0)
 
   def testRRSPForcedWithdrawEarly(self):
     fund = funds.RRSP()
@@ -225,13 +239,11 @@ class RRSPTest(unittest.TestCase):
   def testRRSPUpdate(self):
     fund = funds.RRSP()
     fund.amount = 20
-    fund.room = 0
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.2
     year_rec.incomes.append(incomes.IncomeReceipt(10000, incomes.INCOME_TYPE_EARNINGS))
     fund.Update(year_rec)
     self.assertEqual(fund.amount, 24)
-    self.assertEqual(fund.room, 1800)
     self.assertEqual(fund.unrealized_gains, 0)
 
 
@@ -244,7 +256,6 @@ class NonRegisteredTest(unittest.TestCase):
     self.assertEqual(fund.amount, 15)
     self.assertIn(funds.DepositReceipt(15, funds.FUND_TYPE_NONREG),
                   year_rec.deposits)
-    self.assertEqual(fund.room, funds.NO_ROOM_LIMIT)
     self.assertEqual(fund.unrealized_gains, 0)
   
   def testNonRegisteredWithdraw(self):
@@ -381,7 +392,6 @@ class RRSPBridgingTest(unittest.TestCase):
     self.assertEqual(fund.amount, 30)
     self.assertIn(funds.DepositReceipt(0, funds.FUND_TYPE_BRIDGING),
                   year_rec.deposits)
-    self.assertEqual(fund.room, 0)
   
   def testRRSPBridgingWithdraw(self):
     fund = funds.RRSPBridging()
@@ -392,23 +402,23 @@ class RRSPBridgingTest(unittest.TestCase):
     self.assertEqual(fund.unrealized_gains, 0)
     self.assertIn(funds.WithdrawReceipt(15, 0, funds.FUND_TYPE_BRIDGING),
                   year_rec.withdrawals)
-    self.assertEqual(fund.room, 0)
 
 
 class ChainingTest(unittest.TestCase):
   
   def testChainedDeposit(self):
+    year_rec = utils.YearRecord()
     tfsa = funds.TFSA()
-    tfsa.room = 30
+    year_rec.tfsa_room = 30
     rrsp = funds.RRSP()
-    rrsp.room = 50
+    year_rec.rrsp_room = 50
     bridging = funds.RRSPBridging()
     bridging.amount = 60
     nonreg = funds.NonRegistered()
     fund_chain = (tfsa, rrsp, bridging, nonreg)
     proportions = (1, 1, 1, 1)
     deposited, year_rec = funds.ChainedDeposit(100, fund_chain, proportions,
-                                               utils.YearRecord())
+                                               year_rec)
     self.assertEqual(deposited, 100)
     self.assertSequenceEqual(year_rec.deposits,
                             [funds.DepositReceipt(30, funds.FUND_TYPE_TFSA),
@@ -421,14 +431,15 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(nonreg.amount, 20)
                              
   def testChainedDepositInsufficientRoom(self):
+    year_rec = utils.YearRecord()
     tfsa = funds.TFSA()
-    tfsa.room = 30
+    year_rec.tfsa_room = 30
     rrsp = funds.RRSP()
-    rrsp.room = 50
+    year_rec.rrsp_room = 50
     fund_chain = (tfsa, rrsp)
     proportions = (1, 1)
     deposited, year_rec = funds.ChainedDeposit(100, fund_chain, proportions,
-                                               utils.YearRecord())
+                                               year_rec)
     self.assertEqual(deposited, 80)
     self.assertSequenceEqual(year_rec.deposits,
                              [funds.DepositReceipt(30, funds.FUND_TYPE_TFSA),
@@ -437,15 +448,16 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(rrsp.amount, 50)
                              
   def testChainedDepositProportions(self):
+    year_rec = utils.YearRecord()
     tfsa = funds.TFSA()
-    tfsa.room = 30
+    year_rec.tfsa_room = 30
     rrsp = funds.RRSP()
-    rrsp.room = 30
+    year_rec.rrsp_room = 30
     nonreg = funds.NonRegistered()
     fund_chain = (tfsa, rrsp, nonreg)
     proportions = (0.2, 0.5, 1)
     deposited, year_rec = funds.ChainedDeposit(100, fund_chain, proportions,
-                                               utils.YearRecord())
+                                               year_rec)
     self.assertEqual(deposited, 100)
     self.assertSequenceEqual(year_rec.deposits,
                              [funds.DepositReceipt(20, funds.FUND_TYPE_TFSA),
@@ -556,12 +568,13 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(nonreg.amount, 5)
 
   def testChainedWithdrawForcedWithdrawProportionalDeposit(self):
+    year_rec = utils.YearRecord()
     rrsp = funds.RRSP()
     rrsp.amount = 100
     rrsp.forced_withdraw = 80
     tfsa = funds.TFSA()
     tfsa.amount = 50
-    tfsa.room = 50
+    year_rec.tfsa_room = 50
     nonreg = funds.NonRegistered()
     nonreg.amount = 50
     nonreg.unrealized_gains = 25
@@ -569,7 +582,7 @@ class ChainingTest(unittest.TestCase):
     proportions = (0.1, 0.5, 1)
     withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
                                                        proportions,
-                                                       utils.YearRecord())
+                                                       year_rec)
     self.assertEqual(withdrawn, 60)
     self.assertEqual(gains, 0)
     self.assertSequenceEqual(
@@ -606,18 +619,20 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(tfsa.amount, 50)
 
   def testChainedTransactionDifferentProportion(self):
+    year_rec = utils.YearRecord()
     rrsp = funds.RRSP()
     rrsp.amount = 100
     rrsp.forced_withdraw = 80
     tfsa = funds.TFSA()
     tfsa.amount = 50
+    year_rec.tfsa_room = 100
     nonreg = funds.NonRegistered()
     fund_chain = (rrsp, tfsa, nonreg)
     withdrawal_proportions = (0.5, 0.5, 1)
     deposit_proportions = (0.5, 0.8, 1)
     withdrawn, gains, year_rec = funds.ChainedTransaction(
         60, fund_chain, withdrawal_proportions, deposit_proportions,
-        utils.YearRecord())
+        year_rec)
     self.assertEqual(withdrawn, 60)
     self.assertEqual(gains, 0)
     self.assertSequenceEqual(

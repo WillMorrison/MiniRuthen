@@ -14,6 +14,8 @@ class YearRecord(object):
     self.year = world.BASE_YEAR
     self.growth_rate = 0
     self.age = world.START_AGE
+    self.rrsp_room = 0
+    self.tfsa_room = 0
 
     self.is_dead = False
     self.is_employed = False

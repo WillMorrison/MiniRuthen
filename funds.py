@@ -27,28 +27,30 @@ class Fund(object):
   def __init__(self):
     self.fund_type = FUND_TYPE_NONE
     self.amount = 0
-    self.room = NO_ROOM_LIMIT
     self.room_replenishes = False
     self.unrealized_gains = 0
     self.forced_withdraw = 0
   
   def Deposit(self, amount, year_rec):
-    if self.room == NO_ROOM_LIMIT:
+    room = self.GetRoom(year_rec)
+    if room == NO_ROOM_LIMIT:
       self.amount += amount
       deposited = amount
     else:
-      if self.room >= amount:
+      if room >= amount:
         self.amount += amount
-        self.room -= amount
+        room -= amount
         deposited = amount
       else:
-        deposited = self.room
+        deposited = room
         self.amount += deposited
-        self.room = 0
+        room = 0
     year_rec.deposits.append(DepositReceipt(deposited, self.fund_type))
+    self.SetRoom(year_rec, room)
     return (deposited, year_rec)
 
   def Withdraw(self, amount, year_rec):
+    room = self.GetRoom(year_rec)
     gain_proportion = self.unrealized_gains / self.amount
 
     if self.forced_withdraw > amount:
@@ -61,8 +63,8 @@ class Fund(object):
       withdrawn = self.amount
       self.amount = 0
     
-    if self.room != NO_ROOM_LIMIT and self.room_replenishes:
-      self.room += withdrawn
+    if room != NO_ROOM_LIMIT and self.room_replenishes:
+      room += withdrawn
 
     self.forced_withdraw = 0
 
@@ -70,6 +72,7 @@ class Fund(object):
     self.unrealized_gains -= realized_gains
 
     year_rec.withdrawals.append(WithdrawReceipt(withdrawn, realized_gains, self.fund_type))
+    self.SetRoom(year_rec, room)
     return (withdrawn, realized_gains, year_rec)
 
   def Update(self, year_rec):
@@ -84,17 +87,27 @@ class Fund(object):
     """
     return max(self.amount * year_rec.growth_rate, -self.amount)
 
+  def GetRoom(self, year_rec):
+    return NO_ROOM_LIMIT
+
+  def SetRoom(self, year_rec, room):
+    pass
+
 class TFSA(Fund):
 
   def __init__(self):
     super().__init__()
     self.fund_type = FUND_TYPE_TFSA
-    self.room = world.TFSA_INITIAL_CONTRIBUTION_LIMIT
     self.room_replenishes = True
 
   def Update(self, year_rec):
-    self.room += world.TFSA_ANNUAL_CONTRIBUTION_LIMIT
     self.amount += self.Growth(year_rec)
+
+  def GetRoom(self, year_rec):
+    return year_rec.tfsa_room
+
+  def SetRoom(self, year_rec, room):
+    year_rec.tfsa_room = room
 
 
 class RRSP(Fund):
@@ -105,17 +118,23 @@ class RRSP(Fund):
     self.room = world.RRSP_INITIAL_LIMIT
 
   def Update(self, year_rec):
-    # RRSP new room calculation
-    earning_receipts = [receipt for receipt in year_rec.incomes
-                        if receipt.income_type == incomes.INCOME_TYPE_EARNINGS]
-    earnings_total = sum(receipt.amount for receipt in earning_receipts)
-    self.room += min(utils.Indexed(world.RRSP_LIMIT, year_rec.year), world.RRSP_ACCRUAL_FRACTION * earnings_total)
+    # RRSP new room calculation TODO move this logic to person
+    # earning_receipts = [receipt for receipt in year_rec.incomes
+    #                     if receipt.income_type == incomes.INCOME_TYPE_EARNINGS]
+    # earnings_total = sum(receipt.amount for receipt in earning_receipts)
+    # self.room += min(utils.Indexed(world.RRSP_LIMIT, year_rec.year), world.RRSP_ACCRUAL_FRACTION * earnings_total)
 
     # Growth
     self.amount += self.Growth(year_rec)
 
     # calculate RRSP mandatory withdrawal
     self.forced_withdraw = world.MINIMUM_WITHDRAWAL_FRACTION[year_rec.age+1] * self.amount
+
+  def GetRoom(self, year_rec):
+    return year_rec.rrsp_room
+
+  def SetRoom(self, year_rec, room):
+    year_rec.rrsp_room = room
 
 
 class NonRegistered(Fund):
@@ -139,7 +158,11 @@ class RRSPBridging(Fund):
   def __init__(self):
     super().__init__()
     self.fund_type = FUND_TYPE_BRIDGING
-    self.room = 0  # No deposits allowed after account creation
+
+  def Deposit(self, amount, year_rec):
+    deposited = 0 # No deposits allowed after account creation
+    year_rec.deposits.append(DepositReceipt(deposited, self.fund_type))
+    return (deposited, year_rec)
 
 
 def ChainedDeposit(amount, funds, proportions, year_rec):
@@ -171,3 +194,7 @@ def ChainedTransaction(amount, funds, withdrawal_proportions,
     else:
       break
   return (total_withdrawn, total_realized_gains, year_rec)
+
+def SplitFund(source, sink, amount):
+  """Partition a fund into two pieces, transferring gains as appropriate."""
+  pass
