@@ -35,7 +35,20 @@ class Person(object):
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
     self.funds = [funds.TFSA(), funds.RRSP(), funds.NonRegistered()]
     self.involuntary_retirement_random = random.random()
-    
+
+
+  def OnRetirement(self):
+    """This deals with events happening at the point of retirement."""
+
+    # Update all incomes
+    for income in self.incomes:
+      income.OnRetirement(self)
+
+    # Create RRSP bridging fund if needed
+
+    # Split each fund into a CED and a CD fund
+
+
 
   def AnnualSetup(self):
     """This is responsible for beginning of year operations.
@@ -63,8 +76,7 @@ class Person(object):
       if ((self.age == self.strategy.planned_retirement_age and self.age >= world.MINIMUM_RETIREMENT_AGE) or
           self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIREMENT_INCREMENT):
         self.retired = True
-        for income in self.incomes:
-          income.OnRetirement(self)
+        self.OnRetirement()
     year_rec.is_retired = self.retired
 
     # Employment
