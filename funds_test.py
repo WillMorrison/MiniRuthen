@@ -682,6 +682,17 @@ class TestSplitFund(unittest.TestCase):
     self.assertEqual(source.unrealized_gains, 5)
     self.assertEqual(sink.unrealized_gains, 25)
 
+  def testSplitFundSourceHasZeroFunds(self):
+    source = funds.Fund()
+    source.amount = 0
+    source.unrealized_gains = 0
+    sink = funds.Fund()
+    source, sink = funds.SplitFund(source, sink, 30)
+    self.assertEqual(source.amount, 0)
+    self.assertEqual(sink.amount, 0)
+    self.assertEqual(source.unrealized_gains, 0)
+    self.assertEqual(sink.unrealized_gains, 0)
+
 
 if __name__ == '__main__':
   unittest.main()
