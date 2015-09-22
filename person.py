@@ -59,6 +59,8 @@ class Person(object):
     self.funds["cd_nonreg"], self.funds["ced_nonreg"] = funds.SplitFund(self.funds["wp_nonreg"], funds.NonRegistered(), self.strategy.drawdown_ced_fraction * self.funds["wp_nonreg"].amount)
     del self.funds["wp_nonreg"]
 
+    self.cd_drawdown_amount = sum(fund.amount for fund in (self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"])) * self.strategy.initial_cd_fraction
+
 
   def AnnualSetup(self):
     """This is responsible for beginning of year operations.
