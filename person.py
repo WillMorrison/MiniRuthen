@@ -33,7 +33,7 @@ class Person(object):
     self.employed_last_year = True
     self.retired = False
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
-    self.funds = [funds.TFSA(), funds.RRSP(), funds.NonRegistered()]
+    self.funds = {"wp_tfsa": funds.TFSA(), "wp_rrsp": funds.RRSP(), "wp_nonreg": funds.NonRegistered()}
     self.involuntary_retirement_random = random.random()
 
 
@@ -45,9 +45,19 @@ class Person(object):
       income.OnRetirement(self)
 
     # Create RRSP bridging fund if needed
+    if self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
+      requested = (world.CPP_EXPECTED_RETIREMENT_AGE - self.age) * world.OAS_BENEFIT
+      self.funds["wp_rrsp"], self.funds["bridging"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSPBridging(), requested)
 
     # Split each fund into a CED and a CD fund
-
+    self.funds["cd_rrsp"], self.funds["ced_rrsp"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSP(), self.strategy.drawdown_ced_fraction * self.funds["wp_rrsp"].amount)
+    del self.funds["wp_rrsp"]
+    
+    self.funds["cd_tfsa"], self.funds["ced_tfsa"] = funds.SplitFund(self.funds["wp_tfsa"], funds.TFSA(), self.strategy.drawdown_ced_fraction * self.funds["wp_tfsa"].amount)
+    del self.funds["wp_tfsa"]
+    
+    self.funds["cd_nonreg"], self.funds["ced_nonreg"] = funds.SplitFund(self.funds["wp_nonreg"], funds.NonRegistered(), self.strategy.drawdown_ced_fraction * self.funds["wp_nonreg"].amount)
+    del self.funds["wp_nonreg"]
 
 
   def AnnualSetup(self):
@@ -107,7 +117,7 @@ class Person(object):
         # Attempt to withdraw difference from savings
         amount_to_withdraw = world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction - cash
         proportions = (self.strategy.working_period_drawdown_tfsa_fraction, self.strategy.working_period_drawdown_nonreg_fraction, 1)
-        fund_chain = [f for f in self.funds if f.fund_type == funds.FUND_TYPE_TFSA] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_NONREG] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_RRSP]
+        fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
 
@@ -128,15 +138,16 @@ class Person(object):
     cash -= cpp_contribution + ei_contribution
 
     # Save
-    earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
-    proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
-    fund_chain = [f for f in self.funds if f.fund_type == funds.FUND_TYPE_RRSP] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_TFSA] + [f for f in self.funds if f.fund_type == funds.FUND_TYPE_NONREG] 
-    deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
-    cash -= deposited
+    if not self.is_retired:
+      earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
+      proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
+      fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
+      deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
+      cash -= deposited
 
    
     # Update funds
-    for fund in self.funds:
+    for fund in self.funds.values():
       fund.Update(year_rec)
 
     # Pay income taxes
