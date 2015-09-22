@@ -71,7 +71,6 @@ class FundTest(unittest.TestCase):
   def testWithdrawRoomReplenishment(self):
     fund = funds.Fund()
     fund.amount = 20
-    fund.room = 5
     fund.GetRoom = unittest.mock.MagicMock(return_value=5)
     set_room = unittest.mock.MagicMock()
     fund.SetRoom = set_room
@@ -645,6 +644,43 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(tfsa.amount, 66)
     self.assertEqual(nonreg.amount, 4)
 
+
+class TestSplitFund(unittest.TestCase):
+
+  def testSplitFundSufficientFunds(self):
+    source = funds.Fund()
+    source.amount = 40
+    source.unrealized_gains = 20
+    sink = funds.Fund()
+    source, sink = funds.SplitFund(source, sink, 30)
+    self.assertEqual(source.amount, 10)
+    self.assertEqual(sink.amount, 30)
+    self.assertEqual(source.unrealized_gains, 5)
+    self.assertEqual(sink.unrealized_gains, 15)
+
+  def testSplitFundInsufficientFunds(self):
+    source = funds.Fund()
+    source.amount = 40
+    source.unrealized_gains = 20
+    sink = funds.Fund()
+    source, sink = funds.SplitFund(source, sink, 50)
+    self.assertEqual(source.amount, 0)
+    self.assertEqual(sink.amount, 40)
+    self.assertEqual(source.unrealized_gains, 0)
+    self.assertEqual(sink.unrealized_gains, 20)
+
+  def testSplitFundSinkHasMoney(self):
+    source = funds.Fund()
+    source.amount = 40
+    source.unrealized_gains = 20
+    sink = funds.Fund()
+    sink.amount = 20
+    sink.unrealized_gains = 10
+    source, sink = funds.SplitFund(source, sink, 30)
+    self.assertEqual(source.amount, 10)
+    self.assertEqual(sink.amount, 50)
+    self.assertEqual(source.unrealized_gains, 5)
+    self.assertEqual(sink.unrealized_gains, 25)
 
 
 if __name__ == '__main__':

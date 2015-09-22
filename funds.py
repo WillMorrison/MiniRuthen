@@ -197,4 +197,11 @@ def ChainedTransaction(amount, funds, withdrawal_proportions,
 
 def SplitFund(source, sink, amount):
   """Partition a fund into two pieces, transferring gains as appropriate."""
-  pass
+  amount_to_move = min(amount, source.amount)
+  unrealized_gains_to_move = source.unrealized_gains * amount_to_move / source.amount
+  source.amount -= amount_to_move
+  sink.amount += amount_to_move
+  source.unrealized_gains -= unrealized_gains_to_move
+  sink.unrealized_gains += unrealized_gains_to_move
+  return (source, sink)
+
