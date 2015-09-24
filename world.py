@@ -374,58 +374,17 @@ FEMALE_MORTALITY = ExtendedDict(None,
 
 MORTALITY_MULTIPLIER = 1 # Multiplier for mortality probabilities ( > 1.0 => more likely than usual to die)
 
-CED_PROPORTION = ExtendedDict(None,
-[(60, 0.05438),
- (61, 0.05460),
- (62, 0.05484),
- (63, 0.05509),
- (64, 0.05536),
- (65, 0.05564),
- (66, 0.05594),
- (67, 0.05626),
- (68, 0.05661),
- (69, 0.05697),
- (70, 0.05736),
- (71, 0.05778),
- (72, 0.05823),
- (73, 0.05870),
- (74, 0.05921),
- (75, 0.05976),
- (76, 0.06035),
- (77, 0.06098),
- (78, 0.06166),
- (79, 0.06239),
- (80, 0.06318),
- (81, 0.06404),
- (82, 0.06496),
- (83, 0.06597),
- (84, 0.06706),
- (85, 0.06825),
- (86, 0.06955),
- (87, 0.07097),
- (88, 0.07253),
- (89, 0.07425),
- (90, 0.07616),
- (91, 0.07827),
- (92, 0.08063),
- (93, 0.08327),
- (94, 0.08624),
- (95, 0.08962),
- (96, 0.09347),
- (97, 0.09789),
- (98, 0.10304),
- (99, 0.10907),
- (100, 0.11624),
- (101, 0.12488),
- (102, 0.13549),
- (103, 0.14881),
- (104, 0.16600),
- (105, 0.18898),
- (106, 0.22125),
- (107, 0.26976),
- (108, 0.35075),
- (109, 0.51296),
- (110, 1.00000)])
+# CED Drawdown table calculations
+CED_TABLE_MIN_AGE = 60
+CED_TABLE_MAX_AGE = 111
+_r = 1 / (1 + MEAN_INVESTMENT_RETURN)
+_boy_fund = (1-_r**(CED_TABLE_MAX_AGE - CED_TABLE_MIN_AGE))/(1-_r)
+_table_items = []
+for age in range(CED_TABLE_MIN_AGE, CED_TABLE_MAX_AGE):
+  _table_items.append((age, 1/_boy_fund))
+  _boy_fund = (_boy_fund - 1) * ( 1 + MEAN_INVESTMENT_RETURN)
+
+CED_PROPORTION = ExtendedDict(None, _table_items)
 
 # Fate
 INVOLUNTARY_RETIREMENT_INCREMENT = 0.08

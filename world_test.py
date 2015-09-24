@@ -21,9 +21,9 @@ class ExtendedDictTest(unittest.TestCase):
     self.assertEqual(world.FEMALE_MORTALITY[120], 1.0)
 
   def testCEDProportions(self):
-    self.assertEqual(world.CED_PROPORTION[60], 0.05438)
-    self.assertEqual(world.CED_PROPORTION[110], 1.0)
-    self.assertEqual(world.CED_PROPORTION[120], 1.0)
+    self.assertAlmostEqual(world.CED_PROPORTION[60], 0.05437981)
+    self.assertAlmostEqual(world.CED_PROPORTION[110], 1.0)
+    self.assertAlmostEqual(world.CED_PROPORTION[120], 1.0)
 
   def testTaxSchedule(self):
     self.assertEqual(world.FEDERAL_TAX_SCHEDULE[0], 0)
