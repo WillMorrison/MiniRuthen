@@ -48,6 +48,7 @@ class Person(object):
     if self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
       requested = (world.CPP_EXPECTED_RETIREMENT_AGE - self.age) * world.OAS_BENEFIT
       self.funds["wp_rrsp"], self.funds["bridging"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSPBridging(), requested)
+      self.bridging_annual_withdrawal = self.funds["bridging"].amount / (world.CPP_EXPECTED_RETIREMENT_AGE - self.age)
 
     # Split each fund into a CED and a CD fund
     self.funds["cd_rrsp"], self.funds["ced_rrsp"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSP(), self.strategy.drawdown_ced_fraction * self.funds["wp_rrsp"].amount)
@@ -113,6 +114,11 @@ class Person(object):
 
     # Do withdrawals
     if self.is_retired:
+      # Bridging 
+      if "bridging" in self.funds and self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
+        withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(self.bridging_annual_withdrawal, year_rec)
+        cash += withdrawn
+
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
