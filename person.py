@@ -126,6 +126,10 @@ class Person(object):
       cash += withdrawn
 
       # CED drawdown_strategy
+      fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
+      ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(ced_drawdown_amount, fund_chain, proportions, year_rec)
+      cash += withdrawn
     else:
       if cash < world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction:
         # Attempt to withdraw difference from savings
