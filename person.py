@@ -113,7 +113,13 @@ class Person(object):
 
     # Do withdrawals
     if self.is_retired:
-      pass
+      # CD drawdown strategy
+      proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
+      fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount, fund_chain, proportions, year_rec)
+      cash += withdrawn
+
+      # CED drawdown_strategy
     else:
       if cash < world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction:
         # Attempt to withdraw difference from savings
