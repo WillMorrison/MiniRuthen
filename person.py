@@ -1,5 +1,6 @@
 import collections
 import random
+import incomes
 import funds
 import utils
 import world
@@ -35,6 +36,8 @@ class Person(object):
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
     self.funds = {"wp_tfsa": funds.TFSA(), "wp_rrsp": funds.RRSP(), "wp_nonreg": funds.NonRegistered()}
     self.involuntary_retirement_random = random.random()
+    self.tfsa_room = world.TFSA_INITIAL_CONTRIBUTION_LIMIT
+    self.rrsp_room = world.RRSP_INITIAL_LIMIT
 
 
   def OnRetirement(self):
@@ -93,10 +96,16 @@ class Person(object):
     year_rec.is_retired = self.retired
 
     # Employment
-    year_rec.is_employed = not self.is_retired and random.random() > world.UNEMPLOYMENT_PROBABILITY
+    year_rec.is_employed = not self.retired and random.random() > world.UNEMPLOYMENT_PROBABILITY
 
     # Growth
     year_rec.growth_rate = random.normalvariate(world.MEAN_INVESTMENT_RETURN, world.STD_INVESTMENT_RETURN)
+
+    # Fund room
+    year_rec.tfsa_room = self.tfsa_room
+    year_rec.rrsp_room = self.rrsp_room
+
+    return year_rec
 
 
   def CalcIncomeTax(self, year_rec):
@@ -142,8 +151,8 @@ class Person(object):
 
     # DO EI/CPP contributions
     earnings = sum(receipt.amount for receipt in year_rec.incomes
-                   if receipt.income_type = incomes.INCOME_TYPE_EARNINGS)
-		
+                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+
     if earnings - world.YBE < 0:
       cpp_effective_earnings = 0
     else:
@@ -151,7 +160,7 @@ class Person(object):
     year_rec.pensionable_earnings = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), cpp_effective_earnings)
     cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
-		year_rec.insurable_earnings = min(utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE), earnings)
+    year_rec.insurable_earnings = min(utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE), earnings)
     ei_contribution = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
     cash -= cpp_contribution + ei_contribution
 
