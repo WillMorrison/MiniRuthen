@@ -115,11 +115,9 @@ class Person(object):
     rrsp_withdrawal_sum = sum(receipt.amount for receipt in year_rec.withdrawals
                               if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
     capital_gains = (sum(receipt.gains for receipt in year_rec.withdrawals) +
-                     sum(receipt.amount for receipt in year_rec.tax_receipts))
+                     sum(receipt.gross_gain for receipt in year_rec.tax_receipts))
     if capital_gains > 0:
-      used_capital_losses = min(self.capital_loss_carry_forward, capital_gains)
-      taxable_capital_gains = (capital_gains - used_capital_losses) * world.CG_INCLUSION_RATE
-      self.capital_loss_carry_forward -= used_capital_losses
+      taxable_capital_gains = capital_gains * world.CG_INCLUSION_RATE
     else:
       self.capital_loss_carry_forward += -capital_gains
       taxable_capital_gains = 0
