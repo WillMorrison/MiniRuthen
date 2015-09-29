@@ -124,6 +124,11 @@ class Person(object):
 
     total_income = income_sum + rrsp_withdrawal_sum + taxable_capital_gains
 
+    # Calculate Net Income before adjustments
+    rrsp_contribution_sum = sum(receipt.amount for receipt in year_rec.deposits
+                                  if receipt.fund_type in (funds.FUND_TYPE_RRSP))
+    net_income_before_adjustments = total_income - rrsp_contribution_sum
+
     return 0
 
   def MeddleWithCash(self, year_rec):
