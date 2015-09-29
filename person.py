@@ -127,7 +127,7 @@ class Person(object):
     # Calculate Net Income before adjustments
     rrsp_contribution_sum = sum(receipt.amount for receipt in year_rec.deposits
                                   if receipt.fund_type in (funds.FUND_TYPE_RRSP))
-    net_income_before_adjustments = total_income - rrsp_contribution_sum
+    net_income_before_adjustments = max(total_income - rrsp_contribution_sum, 0)
 
     return 0
 
