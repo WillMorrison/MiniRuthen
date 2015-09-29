@@ -38,6 +38,7 @@ class Person(object):
     self.involuntary_retirement_random = random.random()
     self.tfsa_room = world.TFSA_INITIAL_CONTRIBUTION_LIMIT
     self.rrsp_room = world.RRSP_INITIAL_LIMIT
+    self.capital_loss_carry_forward = 0
 
 
   def OnRetirement(self):
@@ -107,9 +108,24 @@ class Person(object):
 
     return year_rec
 
-
   def CalcIncomeTax(self, year_rec):
     """Calculates the amount of income tax to be paid"""
+    # Calculate Total Income
+    income_sum = sum(receipt.amount for receipt in year_rec.incomes)
+    rrsp_withdrawal_sum = sum(receipt.amount for receipt in year_rec.withdrawals
+                              if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
+    capital_gains = (sum(receipt.gains for receipt in year_rec.withdrawals) +
+                     sum(receipt.amount for receipt in year_rec.tax_receipts))
+    if capital_gains > 0:
+      used_capital_losses = min(self.capital_loss_carry_forward, capital_gains)
+      taxable_capital_gains = (capital_gains - used_capital_losses) * world.CG_INCLUSION_RATE
+      self.capital_loss_carry_forward -= used_capital_losses
+    else:
+      self.capital_loss_carry_forward += -capital_gains
+      taxable_capital_gains = 0
+
+    total_income = income_sum + rrsp_withdrawal_sum + taxable_capital_gains
+
     return 0
 
   def MeddleWithCash(self, year_rec):

@@ -80,7 +80,7 @@ class PersonTest(unittest.TestCase):
     year_rec = j_canuck.AnnualSetup()
     self.assertTrue(year_rec.is_dead)
 
-    # Female, random variate > mortality probability at age 30
+    # Male, random variate > mortality probability at age 30
     j_canuck = person.Person(strategy=self.default_strategy, gender=person.MALE)
     j_canuck.age = 30
     mock_random.return_value = 0.0009
