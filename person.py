@@ -161,7 +161,13 @@ class Person(object):
 
     # Taxable Income
     applied_capital_loss_amount = min(taxable_capital_gains, self.capital_loss_carry_forward * world.CG_INCLUSION_RATE)
-    taxable_income = net_income - (net_federal_supplements_deduction + applied_capital_loss_amount)
+    taxable_income = max(0, net_income - (net_federal_supplements_deduction + applied_capital_loss_amount))
+
+    # Age amount
+    age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION) * world.AGE_AMOUNT_REDUCTION_RATE
+    age_amount = max(0, world.AGE_AMOUNT_MAXIMUM - age_amount_reduction)
+
+    # Federal non-refundable tax credits
 
 
     return 0
