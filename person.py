@@ -129,6 +129,41 @@ class Person(object):
                                   if receipt.fund_type == funds.FUND_TYPE_RRSP)
     net_income_before_adjustments = max(total_income - rrsp_contribution_sum, 0)
 
+    # Employment Insurance Social Benefits Repayment
+    ei_benefits = sum(receipt.amount for receipt in year_rec.incomes
+                     if receipt.income_type == incomes.INCOME_TYPE_EI)
+    ei_base_amount = utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE) * world.EI_REPAYMENT_BASE_FRACTION
+    ei_benefit_repayment = min(max(0, net_income_before_adjustments - ei_base_amount), ei_benefits) * world.EI_REPAYMENT_REDUCTION_RATE
+
+    # Old Age Security and Net Federal Supplements Repayment
+    oas_plus_gis = sum(receipt.amount for receipt in year_rec.incomes
+                     if receipt.income_type in (incomes.INCOME_TYPE_OAS, incomes.INCOME_TYPE_GIS))
+
+    income_over_base_amount = max(0, max(0, net_income_before_adjustments-ei_benefit_repayment)-world.OAS_CLAWBACK_EXEMPTION) * world.OAS_CLAWBACK_RATE
+    oas_and_gis_repayment = min(oas_plus_gis, income_over_base_amount)
+
+    # Total Social Benefit Repayment
+    total_social_benefit_repayment = ei_benefit_repayment + oas_and_gis_repayment
+
+    # Other Payments Deduction
+    gis_income = sum(receipt.amount for receipt in year_rec.incomes
+                     if receipt.income_type == incomes.INCOME_TYPE_GIS)
+    oas_income = sum(receipt.amount for receipt in year_rec.incomes
+                     if receipt.income_type == incomes.INCOME_TYPE_OAS)
+    try:
+      oas_benefit_repaid = oas_and_gis_repayment * oas_income / (gis_income + oas_income)
+    except ZeroDivisionError:
+      oas_benefit_repaid = 0
+    net_federal_supplements_deduction = gis_income - (total_social_benefit_repayment - (ei_benefit_repayment + oas_benefit_repaid))
+
+    # Net Income
+    net_income = net_income_before_adjustments - total_social_benefit_repayment
+
+    # Taxable Income
+    applied_capital_loss_amount = min(taxable_capital_gains, self.capital_loss_carry_forward * world.CG_INCLUSION_RATE)
+    taxable_income = net_income - (net_federal_supplements_deduction + applied_capital_loss_amount)
+
+
     return 0
 
   def MeddleWithCash(self, year_rec):
