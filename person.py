@@ -167,8 +167,14 @@ class Person(object):
     age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION) * world.AGE_AMOUNT_REDUCTION_RATE
     age_amount = max(0, world.AGE_AMOUNT_MAXIMUM - age_amount_reduction)
 
-    # Federal non-refundable tax credits
+    # CPP employee contribution
+    earnings = sum(receipt.amount for receipt in year_rec.incomes
+                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+    pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings), world.YBE)
+    cpp_employee_contribution = pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
+    # EI premium
+    min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE)) * world.EI_PREMIUM_RATE
 
     return 0
 
