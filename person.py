@@ -244,6 +244,9 @@ class Person(object):
       income.AnnualUpdate(year_rec)
 
     # Pay sales tax
+    non_hst_consumption = min(cash, world.SALES_TAX_EXEMPTION)
+    hst_consumption = cash - non_hst_consumption
+    year_rec.consumption = hst_consumption / (1 + world.HST_RATE) + non_hst_consumption
 
 
   def AnnualReview(self, year_rec):
