@@ -112,9 +112,9 @@ FEDERAL_TAX_SCHEDULE = TaxSchedule(None,
  (43953, 6593),
  (87907, 16263),
  (136270, 28837),
- (1136270, 318837)])
+ (2136270, 608837)])
 
-PROVINCIAL_TAX_FRACTION = 0.47
+PROVINCIAL_TAX_FRACTION = 0.5
 
 # Credit-related
 BASIC_PERSONAL_AMOUNT = 11138 # Basic Personal Amount for federal non-refundable income tax credits
@@ -131,6 +131,7 @@ SBR_REDUCTION_RATE = 0.15 # Social benefits are reduced by this fraction of inco
 CG_INCLUSION_RATE = 0.5 # Capital Gains Inclusion Rate (proportion of realized capital gains that is taxed)
 DIVIDEND_GROSSUP_RATE = 1.38 # Dividend gross-up rate: multiplier for actual dividends to get taxable dividends
 DIVIDEND_TAX_CREDIT_RATE = 0.150198 # Fraction of dividends claimable as a non-refundable dividend tax credit
+NON_REFUNDABLE_CREDIT_RATE = 0.15 # Equal to the rate at the lowest tax bracket
 
 # Economic Parameters
 MEAN_INVESTMENT_RETURN = 0.0532 # Mean of normal distribution for returns to funds

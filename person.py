@@ -176,7 +176,16 @@ class Person(object):
     # EI premium
     ei_premium = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE)) * world.EI_PREMIUM_RATE
 
-    return 0
+    # Federal non-refundable tax credits
+    federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + cpp_employee_contribution + ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
+
+    # Federal tax on taxable income
+    net_federal_tax = max(0, world.FEDERAL_TAX_SCHEDULE[taxable_income] - federal_non_refundable_credits)
+
+    # Tax payable
+    tax_payable = net_federal_tax + total_social_benefit_repayment + net_federal_tax * world.PROVINCIAL_TAX_FRACTION
+
+    return tax_payable
 
   def MeddleWithCash(self, year_rec):
     """This performs all operations on subject's cash pile"""
