@@ -232,7 +232,6 @@ class Person(object):
       deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
       cash -= deposited
 
-   
     # Update funds
     for fund in self.funds.values():
       fund.Update(year_rec)
