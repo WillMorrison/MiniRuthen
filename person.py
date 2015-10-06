@@ -170,11 +170,12 @@ class Person(object):
     # CPP employee contribution
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
-    pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
-    cpp_employee_contribution = pensionable_earnings * world.CPP_EMPLOYEE_RATE
+    year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
+    cpp_employee_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
     # EI premium
-    ei_premium = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE)) * world.EI_PREMIUM_RATE
+    year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE))
+    ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
 
     # Federal non-refundable tax credits
     federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + cpp_employee_contribution + ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
@@ -222,22 +223,6 @@ class Person(object):
         fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
-
-
-    # DO EI/CPP contributions
-    earnings = sum(receipt.amount for receipt in year_rec.incomes
-                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
-
-    if earnings - world.YBE < 0:
-      cpp_effective_earnings = 0
-    else:
-      cpp_effective_earnings = earnings
-    year_rec.pensionable_earnings = min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), cpp_effective_earnings)
-    cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
-
-    year_rec.insurable_earnings = min(utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE), earnings)
-    ei_contribution = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
-    cash -= cpp_contribution + ei_contribution
 
     # Save
     if not self.is_retired:
