@@ -4,6 +4,7 @@ import person
 import incomes
 import funds
 import world
+import utils
 
 class PersonTest(unittest.TestCase):
 
@@ -201,6 +202,11 @@ class PersonTest(unittest.TestCase):
     self.assertEqual(j_canuck.funds["cd_nonreg"].amount, 100)
     self.assertEqual(j_canuck.funds["ced_nonreg"].amount, 400)
     self.assertEqual(j_canuck.cd_drawdown_amount, 30)
+
+  def testIncomeTax(self):
+    j_canuck = person.Person(strategy=self.default_strategy)
+    year_rec = utils.YearRecord()
+    # TODO: Get numbers from alternate implementation
 
 
 if __name__ == '__main__':
