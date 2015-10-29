@@ -190,6 +190,32 @@ class Person(object):
 
     return tax_payable
 
+  def CalcEndOfLifeEstate(self, year_rec):
+    # Withdraw all money from all funds to generate the relevant receipts
+    total_funds_amount = 0
+    for fund in self.funds.values()
+      withdrawn, gains, year_rec = fund.Withdraw(fund.amount, year_rec)
+      total_funds_amount += withdrawn
+
+    # Gross estate at death
+    gross_estate = total_funds_amount + world.CPP_DEATH_BENEFIT
+
+    # Probate tax
+    probate_below = world.PROBATE_RATE_BELOW * min(gross_estate, world.PROBATE_RATE_CHANGE_LEVEL)
+    probate_above = world.PROBATE_RATE_ABOVE * max(0, gross_estate -world.PROBATE_RATE_CHANGE_LEVEL)
+    
+    # Final income tax return
+    income_taxes_payable = self.CalcIncomeTax(year_rec)
+
+    net_estate_after_tax = max(0, gross_estate - (probate_below + probate_above + income_taxes_payable))
+    
+    # Funeral and executor costs
+    funeral_and_executor_fee = world.EXECUTOR_COST_FRACTION * gross_estate + world.FUNERAL_COST
+
+    # Final estate value
+    estate = max(0, net_estate_after_tax - funeral_and_executor_fee)
+    return estate
+
   def MeddleWithCash(self, year_rec):
     """This performs all operations on subject's cash pile"""
     cash = 0

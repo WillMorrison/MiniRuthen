@@ -117,6 +117,13 @@ FEDERAL_TAX_SCHEDULE = TaxSchedule(None,
 
 PROVINCIAL_TAX_FRACTION = 0.5
 
+# End of life probate tax parameters
+PROBATE_RATE_CHANGE_LEVEL = 50000
+PROBATE_RATE_ABOVE = 0.015
+PROBATE_RATE_BELOW = 0.005
+EXECUTOR_COST_FRACTION = 0.02
+FUNERAL_COST = 10000
+
 # Credit-related
 BASIC_PERSONAL_AMOUNT = 11138 # Basic Personal Amount for federal non-refundable income tax credits
 AGE_AMOUNT_MAXIMUM = 6916 # Maximum Age Amount for federal non-refundable income tax credits
