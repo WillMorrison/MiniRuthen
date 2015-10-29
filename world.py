@@ -28,6 +28,7 @@ AAF_POST65 = 0.084 # CPP actuarial adjustment factor for delayed retirement, aft
 AAF_POST65_YEARS_CAP = 5 # Years after retirement that delayed retirement benefit increment per year caps at
 CPP_GENERAL_DROPOUT_FACTOR = 0.17 # CPP general dropout fraction: fraction of the earnings years that can be dropped out
 CPP_RETIREMENT_BENEFIT_FRACTION = 0.25 # CPP fraction of earnings replaced (capped)
+CPP_DEATH_BENEFIT = 2500
 EARNINGS_YMPE_FRACTION = 1
 PRE_SIM_CPP_YEARS = START_AGE - 18
 PRE_SIM_ZERO_EARNING_YEARS = 4

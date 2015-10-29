@@ -122,7 +122,9 @@ class Person(object):
       self.capital_loss_carry_forward += -capital_gains
       taxable_capital_gains = 0
 
-    total_income = income_sum + rrsp_withdrawal_sum + taxable_capital_gains
+    cpp_death_benefit = world.CPP_DEATH_BENEFIT if year_rec.is_dead else 0
+
+    total_income = income_sum + rrsp_withdrawal_sum + taxable_capital_gains + cpp_death_benefit
 
     # Calculate Net Income before adjustments
     rrsp_contribution_sum = sum(receipt.amount for receipt in year_rec.deposits
