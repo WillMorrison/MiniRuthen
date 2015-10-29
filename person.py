@@ -180,7 +180,10 @@ class Person(object):
     ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
 
     # Federal non-refundable tax credits
-    federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + cpp_employee_contribution + ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
+    if year_rec.is_dead:
+      federal_non_refundable_credits = 0
+    else:
+      federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + cpp_employee_contribution + ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
 
     # Federal tax on taxable income
     net_federal_tax = max(0, world.FEDERAL_TAX_SCHEDULE[taxable_income] - federal_non_refundable_credits)
