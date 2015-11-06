@@ -51,7 +51,7 @@ class UtilsTest(unittest.TestCase):
     acc2 = utils.SummaryStatsAccumulator()
     for i in range(1000000002, 1000000026, 2):
       acc1.UpdateOneValue(i)
-    for i in range(10000000026, 1000000052, 2):
+    for i in range(1000000026, 1000000052, 2):
       acc2.UpdateOneValue(i)
     acc1.UpdateSubsample(acc2.n, acc2.mean, acc2.M2)
 
