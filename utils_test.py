@@ -55,7 +55,7 @@ class UtilsTest(unittest.TestCase):
       acc2.UpdateOneValue(i)
     acc1.UpdateSubsample(acc2.n, acc2.mean, acc2.M2)
 
-    #self.assertEqual(acc1.n, 25)
+    self.assertEqual(acc1.n, 25)
     self.assertAlmostEqual(acc1.mean, 1000000026)
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
