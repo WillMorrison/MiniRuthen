@@ -81,7 +81,6 @@ class UtilsTest(unittest.TestCase):
 
     self.assertHistogramsEqual(acc.bins, [(5, 1), (9, 1), (22, 1)])
 
-
   def testQuantileAccumulatorUpdateOneValueMerge(self):
     acc = utils.QuantileAccumulator(max_bins=2)
     acc.UpdateOneValue(5)
@@ -89,6 +88,14 @@ class UtilsTest(unittest.TestCase):
     acc.UpdateOneValue(9)
 
     self.assertHistogramsEqual(acc.bins, [(7, 2), (22, 1)])
+
+  def testQuantileAccumulatorUpdateOneValueIncrement(self):
+    acc = utils.QuantileAccumulator(max_bins=2)
+    acc.UpdateOneValue(5)
+    acc.UpdateOneValue(5)
+    acc.UpdateOneValue(5)
+
+    self.assertHistogramsEqual(acc.bins, [(5, 3)])
 
   def testQuantileAccumulatorUpdateHistogramNoMerge(self):
     acc1 = utils.QuantileAccumulator(max_bins=4)

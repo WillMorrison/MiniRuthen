@@ -91,7 +91,11 @@ class QuantileAccumulator(object):
           self.bins[i][1]+self.bins[i+1][1])]
 
   def UpdateOneValue(self, value):
-    bisect.insort(self.bins, (value, 1))
+    i = bisect.bisect_left(self.bins, (value, 1))
+    if i < len(self.bins) and self.bins[i][0] == value:
+      self.bins[i] = (value, self.bins[i][1]+1)
+    else:
+      self.bins.insert(i, (value, 1))
     self._Merge()
 
   def UpdateHistogram(self, bins):
@@ -123,5 +127,3 @@ class QuantileAccumulator(object):
     else:
       bin_frac = (n_points - cumsums[i])/(cumsums[i+1] - cumsums[i])
       return self.bins[i-1][0] + bin_frac * (self.bins[i][0] - self.bins[i-1][0])
-
-    
