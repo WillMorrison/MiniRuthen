@@ -49,6 +49,8 @@ class SummaryStatsAccumulator(object):
     self.M2 += delta * (value - self.mean)
 
   def UpdateSubsample(self, n, mean, M2):
+    if not (self.n or n):
+      return
     delta = mean - self.mean
     self.mean = (self.mean * self.n + mean * n) / (self.n + n)
     self.M2 += M2 + math.pow(delta, 2) * self.n * n / (self.n + n)

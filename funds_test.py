@@ -104,6 +104,15 @@ class FundTest(unittest.TestCase):
     self.assertEqual(withdrawn, 10)
     self.assertEqual(fund.amount, 0)
     self.assertEqual(fund.forced_withdraw, 0)
+  
+  def testWithdrawZero(self):
+    fund = funds.Fund()
+    fund.amount = 0
+    withdrawn, gains, year_rec = fund.Withdraw(10, utils.YearRecord())
+    self.assertEqual(withdrawn, 0)
+    self.assertEqual(gains, 0)
+    self.assertIn(funds.WithdrawReceipt(0, 0, funds.FUND_TYPE_NONE),
+                  year_rec.withdrawals)
 
   def testGrowthZero(self):
     fund = funds.Fund()

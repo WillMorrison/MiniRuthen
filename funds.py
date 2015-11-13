@@ -51,7 +51,10 @@ class Fund(object):
 
   def Withdraw(self, amount, year_rec):
     room = self.GetRoom(year_rec)
-    gain_proportion = self.unrealized_gains / self.amount
+    try:
+      gain_proportion = self.unrealized_gains / self.amount
+    except ZeroDivisionError:
+      gain_proportion = 0
 
     if self.forced_withdraw > amount:
       amount = self.forced_withdraw

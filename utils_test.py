@@ -60,6 +60,14 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
     self.assertAlmostEqual(acc1.stddev, 14.719601444)
+  
+  def testSummaryStatsAccumulatorUpdateSubsampleEmpty(self):
+    acc = utils.SummaryStatsAccumulator()
+    acc.UpdateSubsample(0, 0, 0)
+
+    self.assertEqual(acc.n, 0)
+    self.assertEqual(acc.mean, 0)
+    self.assertEqual(acc.M2, 00)
 
   def testSummaryStatsAccumulatorUpdateAccumulator(self):
     acc1 = utils.SummaryStatsAccumulator()

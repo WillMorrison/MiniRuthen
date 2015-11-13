@@ -162,6 +162,7 @@ class Person(object):
 
     # Net Income
     net_income = net_income_before_adjustments - total_social_benefit_repayment
+    year_rec.net_income = net_income
 
     # Taxable Income
     applied_capital_loss_amount = min(taxable_capital_gains, self.capital_loss_carry_forward * world.CG_INCLUSION_RATE)
@@ -231,7 +232,7 @@ class Person(object):
       cash += amount
 
     # Do withdrawals
-    if self.is_retired:
+    if self.retired:
       # Bridging 
       if "bridging" in self.funds and self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
         withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(self.bridging_annual_withdrawal, year_rec)
@@ -258,7 +259,9 @@ class Person(object):
         cash += withdrawn
 
     # Save
-    if not self.is_retired:
+    if not self.retired:
+      earnings = sum(receipt.amount for receipt in year_rec.incomes
+                     if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
       earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
       proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
       fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
@@ -281,6 +284,8 @@ class Person(object):
     hst_consumption = cash - non_hst_consumption
     year_rec.consumption = hst_consumption / (1 + world.HST_RATE) + non_hst_consumption
 
+    return year_rec
+
 
   def AnnualReview(self, year_rec):
     """End of year calculations for a live person"""
@@ -293,15 +298,15 @@ class Person(object):
   def EndOfLifeCalcs(self, year_rec):
     """Calculations that happen upon death"""
 
-  def DoYear(self):
-    """Execute one year of life"""
-    year_rec = self.AnnualSetup()
-    if not year_rec.is_dead:
-      year_rec = self.MeddleWithCash(year_rec)
-      self.AnnualReview(year_rec)
-    else:
-      self.EndOfLifeCalcs(year_rec)
-
   def LiveLife(self):
     """Run through one lifetime"""
+    while True:
+      year_rec = self.AnnualSetup()
+      if not year_rec.is_dead:
+        year_rec = self.MeddleWithCash(year_rec)
+        self.AnnualReview(year_rec)
+      else:
+        self.EndOfLifeCalcs(year_rec)
+        break
+
 
