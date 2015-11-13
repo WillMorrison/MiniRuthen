@@ -198,7 +198,7 @@ class Person(object):
   def CalcEndOfLifeEstate(self, year_rec):
     # Withdraw all money from all funds to generate the relevant receipts
     total_funds_amount = 0
-    for fund in self.funds.values()
+    for fund in self.funds.values():
       withdrawn, gains, year_rec = fund.Withdraw(fund.amount, year_rec)
       total_funds_amount += withdrawn
 
