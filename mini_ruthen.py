@@ -1,5 +1,7 @@
 
 import argparse
+import multiprocessing
+import os
 import person
 import utils
 
@@ -20,12 +22,22 @@ def RunPopulationWorker(strategy, gender, n):
 def RunPopulation(strategy, gender, n):
   """Runs population multithreaded"""
   # Initialize accumulators for calculation of fitness function
+  accumulators = utils.AccumulatorBundle()
 
   # Farm work out to worker process pool
+  args = [(strategy, gender, n//os.cpu_count()) for _ in range(os.cpu_count()-1)]
+  args.append((strategy, gender, n - n//os.cpu_count() * (os.cpu_count()-1)))
+  with multiprocessing.Pool() as pool:
+    sub_accumulators = pool.starmap(RunPopulationWorker, args)
 
   # Merge in the results to our accumulators
+  for sub_accumulator in sub_accumulators:
+    accumulators.Merge(sub_accumulator)
 
   # Calculate the fitness function
+  fitness = 0
+
+  return (fitness, accumulators)
 
 if __name__ == '__main__':
   # Set up flags
@@ -68,7 +80,7 @@ if __name__ == '__main__':
       reinvestment_preference_tfsa_fraction=args.reinvestment_preference_tfsa_fraction)
 
   # Run lives
-  accumulators = RunPopulationWorker(strategy, args.gender, args.number)
+  fitness, accumulators = RunPopulation(strategy, args.gender, args.number)
 
   # Output reports
   print("ConsumptionAvgLifetime", accumulators.lifetime_consumption_summary.mean)
