@@ -40,6 +40,8 @@ class Person(object):
     self.rrsp_room = world.RRSP_INITIAL_LIMIT
     self.capital_loss_carry_forward = 0
 
+    self.accumulators = utils.AccumulatorBundle()
+
 
   def OnRetirement(self):
     """This deals with events happening at the point of retirement."""
@@ -282,11 +284,13 @@ class Person(object):
 
   def AnnualReview(self, year_rec):
     """End of year calculations for a live person"""
+    self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired)
+
     self.age += 1
     self.year += 1
 
 
-  def EndOfLifeCalcs(self):
+  def EndOfLifeCalcs(self, year_rec):
     """Calculations that happen upon death"""
 
   def DoYear(self):
@@ -296,7 +300,7 @@ class Person(object):
       year_rec = self.MeddleWithCash(year_rec)
       self.AnnualReview(year_rec)
     else:
-      self.EndOfLifeCalcs()
+      self.EndOfLifeCalcs(year_rec)
 
   def LiveLife(self):
     """Run through one lifetime"""

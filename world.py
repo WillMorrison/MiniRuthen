@@ -154,6 +154,7 @@ HST_RATE = 0.13 # Harmonized Sales Tax rate is the sum of 0.05 GST rate(federal)
 DISCOUNT_RATE = 0.03 # Annual discount rate applied to consumption to reflect time preference
 PARGE = 0.01 # Projected annual real growth in earnings
 YMPE_STDDEV = 0.18 # Standard deviation for earnings as a fraction of current YMPE
+AVG_DISABILITY_AGE = 77 # Age after which subject is considered likely disabled
 
 MALE_MORTALITY = ExtendedDict(None,
 [(0, 0.00577),

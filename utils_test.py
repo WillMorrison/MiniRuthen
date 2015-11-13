@@ -61,6 +61,21 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc1.variance, 216.666666667)
     self.assertAlmostEqual(acc1.stddev, 14.719601444)
 
+  def testSummaryStatsAccumulatorUpdateAccumulator(self):
+    acc1 = utils.SummaryStatsAccumulator()
+    acc2 = utils.SummaryStatsAccumulator()
+    for i in range(2, 26, 2):
+      acc1.UpdateOneValue(i)
+    for i in range(26, 52, 2):
+      acc2.UpdateOneValue(i)
+    acc1.UpdateAccumulator(acc2)
+
+    self.assertEqual(acc1.n, 25)
+    self.assertAlmostEqual(acc1.mean, 26)
+    self.assertAlmostEqual(acc1.M2, 5200)
+    self.assertAlmostEqual(acc1.variance, 216.666666667)
+    self.assertAlmostEqual(acc1.stddev, 14.719601444)
+  
   def assertHistogramsEqual(self, hist1, hist2, places=7):
     """Compares two lists of (float, int) tuples for equality."""
     fail = False
@@ -153,6 +168,72 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.Quantile(0.4), 1.6666667)
     self.assertAlmostEqual(acc.Quantile(0.5), 2)
     self.assertAlmostEqual(acc.Quantile(0.6), 2.3333333)
+
+  def testAccumulatorBundleUpdateConsumptionWorking(self):
+    bundle = utils.AccumulatorBundle()
+    bundle.UpdateConsumption(100, year=world.BASE_YEAR+1, is_retired=False)
+
+    self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
+    self.assertAlmostEqual(bundle.discounted_lifetime_consumption_summary.mean, 97)
+
+    self.assertEqual(bundle.working_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.working_consumption_hist.bins, [(100, 1)])
+
+    self.assertEqual(bundle.retired_consumption_summary.n, 0)
+    self.assertEqual(bundle.retired_consumption_hist.bins, [])
+    self.assertEqual(bundle.pre_disability_retired_consumption_summary.n, 0)
+
+  def testAccumulatorBundleUpdateConsumptionRetiredPreDisability(self):
+    sim_years = world.AVG_DISABILITY_AGE - world.START_AGE
+    bundle = utils.AccumulatorBundle()
+    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True)
+
+    self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
+    self.assertAlmostEqual(bundle.discounted_lifetime_consumption_summary.mean, 100 * 0.97 ** sim_years)
+
+    self.assertEqual(bundle.working_consumption_summary.n, 0)
+    self.assertEqual(bundle.working_consumption_hist.bins, [])
+
+    self.assertEqual(bundle.retired_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.retired_consumption_hist.bins, [(100, 1)])
+    self.assertEqual(bundle.pre_disability_retired_consumption_summary.mean, 100)
+
+  def testAccumulatorBundleUpdateConsumptionRetiredPostDisability(self):
+    sim_years = world.AVG_DISABILITY_AGE - world.START_AGE + 1
+    bundle = utils.AccumulatorBundle()
+    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True)
+
+    self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
+    self.assertAlmostEqual(bundle.discounted_lifetime_consumption_summary.mean, 100 * 0.97 ** sim_years)
+
+    self.assertEqual(bundle.working_consumption_summary.n, 0)
+    self.assertEqual(bundle.working_consumption_hist.bins, [])
+
+    self.assertEqual(bundle.retired_consumption_summary.mean, 100)
+    self.assertHistogramsEqual(bundle.retired_consumption_hist.bins, [(100, 1)])
+    self.assertEqual(bundle.pre_disability_retired_consumption_summary.n, 0)
+
+  def testAccumulatorBundleMerge(self):
+    sim_years = world.AVG_DISABILITY_AGE - world.START_AGE
+    bundle1 = utils.AccumulatorBundle()
+    bundle1.UpdateConsumption(200, year=sim_years + world.BASE_YEAR, is_retired=True)
+    bundle2 = utils.AccumulatorBundle()
+    bundle2.UpdateConsumption(100, year=world.BASE_YEAR + 1, is_retired=False)
+    bundle1.Merge(bundle2)
+
+    self.assertEqual(bundle1.lifetime_consumption_summary.mean, 150)
+    self.assertHistogramsEqual(bundle1.lifetime_consumption_hist.bins, [(100, 1), (200, 1)])
+    self.assertAlmostEqual(bundle1.discounted_lifetime_consumption_summary.n, 2)
+
+    self.assertEqual(bundle1.working_consumption_summary.n, 1)
+    self.assertEqual(bundle1.working_consumption_hist.bins, [(100, 1)])
+
+    self.assertEqual(bundle1.retired_consumption_summary.n, 1)
+    self.assertHistogramsEqual(bundle1.retired_consumption_hist.bins, [(200, 1)])
+    self.assertEqual(bundle1.pre_disability_retired_consumption_summary.n, 1)
 
 
 if __name__ == '__main__':

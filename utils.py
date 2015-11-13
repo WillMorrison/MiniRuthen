@@ -54,6 +54,9 @@ class SummaryStatsAccumulator(object):
     self.M2 += M2 + math.pow(delta, 2) * self.n * n / (self.n + n)
     self.n += n
 
+  def UpdateAccumulator(self, acc):
+    self.UpdateSubsample(acc.n, acc.mean, acc.M2)
+
   @property
   def variance(self):
     """Returns the sample variance, or NaN if fewer than 2 updates."""
@@ -127,3 +130,42 @@ class QuantileAccumulator(object):
     else:
       bin_frac = (n_points - cumsums[i])/(cumsums[i+1] - cumsums[i])
       return self.bins[i-1][0] + bin_frac * (self.bins[i][0] - self.bins[i-1][0])
+
+class AccumulatorBundle(object):
+  def __init__(self):
+    self.lifetime_consumption_summary = SummaryStatsAccumulator()
+    self.lifetime_consumption_hist = QuantileAccumulator()
+    self.working_consumption_summary = SummaryStatsAccumulator()
+    self.working_consumption_hist = QuantileAccumulator()
+    self.retired_consumption_summary = SummaryStatsAccumulator()
+    self.retired_consumption_hist = QuantileAccumulator()
+    self.pre_disability_retired_consumption_summary = SummaryStatsAccumulator()
+    self.discounted_lifetime_consumption_summary = SummaryStatsAccumulator()
+
+  def UpdateConsumption(self, consumption, year, is_retired):
+    discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)
+    age = year - world.BASE_YEAR + world.START_AGE
+
+    self.lifetime_consumption_summary.UpdateOneValue(consumption)
+    self.lifetime_consumption_hist.UpdateOneValue(consumption)
+    self.discounted_lifetime_consumption_summary.UpdateOneValue(discounted_consumption)
+    if is_retired:
+      self.retired_consumption_summary.UpdateOneValue(consumption)
+      self.retired_consumption_hist.UpdateOneValue(consumption)
+      if age <= world.AVG_DISABILITY_AGE:
+        self.pre_disability_retired_consumption_summary.UpdateOneValue(consumption)
+    else:
+      self.working_consumption_summary.UpdateOneValue(consumption)
+      self.working_consumption_hist.UpdateOneValue(consumption)
+
+  def Merge(self, bundle):
+    """Merge in another AccumulatorBundle."""
+    self.lifetime_consumption_summary.UpdateAccumulator(bundle.lifetime_consumption_summary)
+    self.lifetime_consumption_hist.UpdateHistogram(bundle.lifetime_consumption_hist.bins)
+    self.working_consumption_summary.UpdateAccumulator(bundle.working_consumption_summary)
+    self.working_consumption_hist.UpdateHistogram(bundle.working_consumption_hist.bins)
+    self.retired_consumption_summary.UpdateAccumulator(bundle.retired_consumption_summary)
+    self.retired_consumption_hist.UpdateHistogram(bundle.retired_consumption_hist.bins)
+    self.pre_disability_retired_consumption_summary.UpdateAccumulator(bundle.pre_disability_retired_consumption_summary)
+    self.discounted_lifetime_consumption_summary.UpdateAccumulator(bundle.discounted_lifetime_consumption_summary)
+
