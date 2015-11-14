@@ -18,7 +18,7 @@ GIS_CLAWBACK_EXEMPTION = 12 # GIS is reduced in respect of income above this lev
 GIS_REDUCTION_RATE = 0.5 # GIS is reduced by this fraction of income above GIS_CLAWBACK_EXEMPTION
 
 # CPP (Canada Pension Plan) Parameters
-YMPE = 5250 # Year's Maximum Pensionable Earnings in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
+YMPE = 52500 # Year's Maximum Pensionable Earnings in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
 YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE
 MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
 CPP_EMPLOYEE_RATE = 0.0495 # CPP Contribution Rate, Employee component
