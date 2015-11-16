@@ -135,6 +135,7 @@ class QuantileAccumulator(object):
 
 class AccumulatorBundle(object):
   def __init__(self):
+    # Fitness function component accumulators
     self.lifetime_consumption_summary = SummaryStatsAccumulator()
     self.lifetime_consumption_hist = QuantileAccumulator()
     self.working_consumption_summary = SummaryStatsAccumulator()
@@ -143,6 +144,30 @@ class AccumulatorBundle(object):
     self.retired_consumption_hist = QuantileAccumulator()
     self.pre_disability_retired_consumption_summary = SummaryStatsAccumulator()
     self.discounted_lifetime_consumption_summary = SummaryStatsAccumulator()
+    self.earnings_late_working = SummaryStatsAccumulator()
+
+    self.persons = 0
+    self.working_years = 0
+    self.retirement_years = 0
+    self.retired_persons = 0
+    self.seniors = 0
+    self.seniors_years = 0
+    self.retirement_years_ruined = 0
+    self.retirees_experiencing_ruin = 0
+    self.ruined_persons = 0
+    self.retirement_years_below_ympe_assets = 0
+    self.retirement_years_below_twice_ympe_assets = 0
+    self.seniors_receiving_gis = 0
+    self.seniors_years_receiving_gis = 0
+    self.gis_received = 0
+    self.retirees_experiencing_income_less_than_lico = 0
+    self.retirement_years_below_lico_income = 0
+    self.retired_lico_gap = 0
+    self.working_lico_gap = 0
+    self.underwithdrawers = 0
+    self.aggregate_retirement_withdrawals_less_retirement_assets = 0
+    self.aggregate_retirement_withdrawals_less_lifetime_savings = 0
+    self.after_tax_estate_at_death = 0
 
   def UpdateConsumption(self, consumption, year, is_retired):
     discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)
@@ -171,3 +196,25 @@ class AccumulatorBundle(object):
     self.pre_disability_retired_consumption_summary.UpdateAccumulator(bundle.pre_disability_retired_consumption_summary)
     self.discounted_lifetime_consumption_summary.UpdateAccumulator(bundle.discounted_lifetime_consumption_summary)
 
+    self.persons += bundle.persons
+    self.working_years += bundle.working_years
+    self.retirement_years += bundle.retirement_years
+    self.retired_persons += bundle.retired_persons
+    self.seniors += bundle.seniors
+    self.seniors_years += bundle.seniors_years
+    self.retirement_years_ruined += bundle.retirement_years_ruined
+    self.retirees_experiencing_ruin += bundle.retirees_experiencing_ruin
+    self.ruined_persons += bundle.ruined_persons
+    self.retirement_years_below_ympe_assets += bundle.retirement_years_below_ympe_assets
+    self.retirement_years_below_twice_ympe_assets += bundle.retirement_years_below_twice_ympe_assets
+    self.seniors_receiving_gis += bundle.seniors_receiving_gis
+    self.seniors_years_receiving_gis += bundle.seniors_years_receiving_gis
+    self.gis_received += bundle.gis_received
+    self.retirees_experiencing_income_less_than_lico += bundle.retirees_experiencing_income_less_than_lico
+    self.retirement_years_below_lico_income += bundle.retirement_years_below_lico_income
+    self.retired_lico_gap += bundle.retired_lico_gap
+    self.working_lico_gap += bundle.working_lico_gap
+    self.underwithdrawers += bundle.underwithdrawers
+    self.aggregate_retirement_withdrawals_less_retirement_assets += bundle.aggregate_retirement_withdrawals_less_retirement_assets
+    self.aggregate_retirement_withdrawals_less_lifetime_savings += bundle.aggregate_retirement_withdrawals_less_lifetime_savings
+    self.after_tax_estate_at_death += bundle.after_tax_estate_at_death
