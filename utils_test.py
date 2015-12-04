@@ -120,7 +120,7 @@ class UtilsTest(unittest.TestCase):
 
     self.assertHistogramsEqual(acc.bins, [(5, 3)])
 
-  def testQuantileAccumulatorUpdateHistogramNoMerge(self):
+  def testQuantileAccumulatorUpdateAccumulatorNoMerge(self):
     acc1 = utils.QuantileAccumulator(max_bins=4)
     acc1.UpdateOneValue(5)
     acc1.UpdateOneValue(22)
@@ -128,11 +128,11 @@ class UtilsTest(unittest.TestCase):
     acc2.UpdateOneValue(9)
     acc2.UpdateOneValue(19)
 
-    acc1.UpdateHistogram(acc2.bins)
+    acc1.UpdateAccumulator(acc2)
 
     self.assertHistogramsEqual(acc1.bins, [(5, 1), (9, 1), (19, 1), (22, 1)])
 
-  def testQuantileAccumulatorUpdateHistogramMerge(self):
+  def testQuantileAccumulatorUpdateAccumulatorMerge(self):
     acc1 = utils.QuantileAccumulator(max_bins=2)
     acc1.UpdateOneValue(5)
     acc1.UpdateOneValue(22)
@@ -140,9 +140,21 @@ class UtilsTest(unittest.TestCase):
     acc2.UpdateOneValue(9)
     acc2.UpdateOneValue(19)
 
-    acc1.UpdateHistogram(acc2.bins)
+    acc1.UpdateAccumulator(acc2)
 
     self.assertHistogramsEqual(acc1.bins, [(7, 2), (20.5, 2)])
+  
+  def testQuantileAccumulatorUpdateAccumulatorMergeDuplicateCentroids(self):
+    acc1 = utils.QuantileAccumulator(max_bins=5)
+    acc1.UpdateOneValue(9)
+    acc1.UpdateOneValue(22)
+    acc2 = utils.QuantileAccumulator(max_bins=5)
+    acc2.UpdateOneValue(9)
+    acc2.UpdateOneValue(19)
+
+    acc1.UpdateAccumulator(acc2)
+
+    self.assertHistogramsEqual(acc1.bins, [(9, 2), (19, 1), (22, 1)])
 
   def testQuantileAccumulatorUpdateHistogramPaperExample(self):
     acc = utils.QuantileAccumulator(max_bins=5)
@@ -176,6 +188,77 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.Quantile(0.4), 1.6666667)
     self.assertAlmostEqual(acc.Quantile(0.5), 2)
     self.assertAlmostEqual(acc.Quantile(0.6), 2.3333333)
+
+  def testKeyedAccumulatorSummaryStatsUpdateOneValue(self):
+    acc = utils.KeyedAccumulator(utils.SummaryStatsAccumulator)
+    for i in range(2, 52, 2):
+      acc.UpdateOneValue(i, 'key')
+
+    subacc = acc.Query(['key'])
+
+    self.assertEqual(subacc.n, 25)
+    self.assertAlmostEqual(subacc.mean, 26)
+    self.assertAlmostEqual(subacc.M2, 5200)
+    self.assertAlmostEqual(subacc.variance, 216.666666667)
+    self.assertAlmostEqual(subacc.stddev, 14.719601444)
+
+  def testKeyedAccumulatorQuantileUpdateOneValue(self):
+    acc = utils.KeyedAccumulator(utils.QuantileAccumulator, {'max_bins':3})
+    acc.UpdateOneValue(5, 'key')
+    acc.UpdateOneValue(22, 'key')
+    acc.UpdateOneValue(9, 'key')
+    subacc = acc.Query(['key'])
+
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (9, 1), (22, 1)])
+
+  def testKeyedAccumulatorMultipleKeysUpdateOneValue(self):
+    acc = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    acc.UpdateOneValue(5, 'key1')
+    acc.UpdateOneValue(22, 'key1')
+    acc.UpdateOneValue(9, 'key2')
+    subacc = acc.Query(['key1'])
+
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (22, 1)])
+  
+  def testKeyedAccumulatorMultipleKeysQuery(self):
+    acc = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    acc.UpdateOneValue(5, 'key1')
+    acc.UpdateOneValue(22, 'key2')
+    acc.UpdateOneValue(9, 'key1')
+    subacc = acc.Query(['key1', 'key2'])
+
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (9, 1), (22, 1)])
+  
+  def testKeyedAccumulatorSomeMissingKeysQuery(self):
+    acc = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    acc.UpdateOneValue(5, 'key1')
+    acc.UpdateOneValue(22, 'key2')
+    acc.UpdateOneValue(9, 'key1')
+    subacc = acc.Query(['key1', 'key2', 'key3'])
+
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (9, 1), (22, 1)])
+  
+  def testKeyedAccumulatorMissingKeysQueryIsIdempotent(self):
+    acc = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    subacc = acc.Query(['key'])
+    self.assertHistogramsEqual(subacc.bins, [])
+    self.assertEqual(len(acc._accumulators), 0)
+  
+  def testKeyedAccumulatorUpdateAccumulator(self):
+    acc1 = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    acc2 = utils.KeyedAccumulator(utils.QuantileAccumulator)
+    acc1.UpdateOneValue(5, 'key1')
+    acc1.UpdateOneValue(22, 'key2')
+    acc2.UpdateOneValue(9, 'key1')
+    acc2.UpdateOneValue(9, 'key3')
+
+    acc1.UpdateAccumulator(acc2)
+
+    subacc = acc1.Query(['key1', 'key2', 'key3'])
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (9, 2), (22, 1)])
+    
+    subacc = acc1.Query(['key1'])
+    self.assertHistogramsEqual(subacc.bins, [(5, 1), (9, 1)])
 
   def testAccumulatorBundleUpdateConsumptionWorking(self):
     bundle = utils.AccumulatorBundle()

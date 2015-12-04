@@ -86,6 +86,14 @@ class QuantileAccumulator(object):
 
   def _Merge(self):
     """Merges bins if there are more than max_bins. Expects self.bins to be sorted"""
+    # Merge bins with identical centroids first, regardless of self.max_bins
+    while len(self.bins) > 1: 
+      # Find the two closest bins
+      sep, i = min((self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1))
+      if sep: break
+      self.bins[i:i+2] = [(self.bins[i][0], self.bins[i][1]+self.bins[i+1][1])]
+
+    # Now merge other bins until we have at most self.max_bins
     while len(self.bins) > self.max_bins:
       # Find the two closest bins
       sep, i = min((self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1))
@@ -96,17 +104,16 @@ class QuantileAccumulator(object):
           self.bins[i][1]+self.bins[i+1][1])]
 
   def UpdateOneValue(self, value):
-    i = bisect.bisect_left(self.bins, (value, 1))
-    if i < len(self.bins) and self.bins[i][0] == value:
-      self.bins[i] = (value, self.bins[i][1]+1)
-    else:
-      self.bins.insert(i, (value, 1))
+    i = bisect.insort_left(self.bins, (value, 1))
     self._Merge()
 
   def UpdateHistogram(self, bins):
     self.bins.extend(bins)
     self.bins.sort()
     self._Merge()
+
+  def UpdateAccumulator(self, acc):
+    self.UpdateHistogram(acc.bins)
 
   def Quantile(self, q):
     if q < 0 or 1 < q:
@@ -132,6 +139,33 @@ class QuantileAccumulator(object):
     else:
       bin_frac = (n_points - cumsums[i])/(cumsums[i+1] - cumsums[i])
       return self.bins[i-1][0] + bin_frac * (self.bins[i][0] - self.bins[i-1][0])
+
+
+class KeyedAccumulator(object):
+  """Keeps track of subaccumulators by key and allows querying."""
+
+  def __init__(self, subaccumulator_class, subaccumulator_args=None):
+    if subaccumulator_args is None:
+      subaccumulator_args = {}
+
+    self.default_factory = lambda: subaccumulator_class(**subaccumulator_args)
+    self._accumulators = collections.defaultdict(self.default_factory)
+
+  def UpdateOneValue(self, value, key):
+    self._accumulators[key].UpdateOneValue(value)
+
+  def UpdateAccumulator(self, acc):
+    for key in acc._accumulators:
+      self._accumulators[key].UpdateAccumulator(acc._accumulators[key])
+
+  def Query(self, keys):
+    """Returns an accumulator resulting from the merge of all subaccumulators with the given keys."""
+    result = self.default_factory()
+    default = self.default_factory()
+    for key in keys:
+      result.UpdateAccumulator(self._accumulators.get(key, default))
+    return result        
+
 
 class AccumulatorBundle(object):
   def __init__(self):
