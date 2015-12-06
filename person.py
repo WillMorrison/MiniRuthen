@@ -290,6 +290,10 @@ class Person(object):
   def AnnualReview(self, year_rec):
     """End of year calculations for a live person"""
     self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired)
+    earnings = sum(receipt.amount for receipt in year_rec.incomes
+                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+    if self.age >= 60 and not self.retired:
+      self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings)
 
     self.age += 1
     self.year += 1
