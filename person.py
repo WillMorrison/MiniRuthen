@@ -41,7 +41,13 @@ class Person(object):
     self.capital_loss_carry_forward = 0
 
     self.accumulators = utils.AccumulatorBundle()
-
+    self.has_been_ruined = False
+    self.has_received_gis = False
+    self.has_experienced_income_under_lico = False
+    self.assets_at_retirement = 0
+    self.total_retirement_withdrawals = 0
+    self.total_lifetime_withdrawals = 0
+    self.total_working_savings = 0
 
   def OnRetirement(self):
     """This deals with events happening at the point of retirement."""
@@ -67,6 +73,8 @@ class Person(object):
     del self.funds["wp_nonreg"]
 
     self.cd_drawdown_amount = sum(fund.amount for fund in (self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"])) * self.strategy.initial_cd_fraction
+
+    self.assets_at_retirement = sum(fund.amount for fund in self.funds.values())
 
 
   def AnnualSetup(self):
@@ -208,7 +216,7 @@ class Person(object):
 
     # Probate tax
     probate_below = world.PROBATE_RATE_BELOW * min(gross_estate, world.PROBATE_RATE_CHANGE_LEVEL)
-    probate_above = world.PROBATE_RATE_ABOVE * max(0, gross_estate -world.PROBATE_RATE_CHANGE_LEVEL)
+    probate_above = world.PROBATE_RATE_ABOVE * max(0, gross_estate - world.PROBATE_RATE_CHANGE_LEVEL)
     
     # Final income tax return
     income_taxes_payable = self.CalcIncomeTax(year_rec)
@@ -237,18 +245,24 @@ class Person(object):
       if "bridging" in self.funds and self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
         withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(self.bridging_annual_withdrawal, year_rec)
         cash += withdrawn
+        self.total_retirement_withdrawals += withdrawn
+        self.total_lifetime_withdrawals += withdrawn
 
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
       withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
+      self.total_retirement_withdrawals += withdrawn
+      self.total_lifetime_withdrawals += withdrawn
 
       # CED drawdown_strategy
       fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
       ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
       withdrawn, gains, year_rec = funds.ChainedWithdraw(ced_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
+      self.total_retirement_withdrawals += withdrawn
+      self.total_lifetime_withdrawals += withdrawn
     else:
       if cash < world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction:
         # Attempt to withdraw difference from savings
@@ -257,6 +271,7 @@ class Person(object):
         fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
+        self.total_lifetime_withdrawals += withdrawn
 
     # Save
     if not self.retired:
@@ -267,6 +282,7 @@ class Person(object):
       fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
       deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
       cash -= deposited
+      self.total_working_savings += deposited
 
     # Update funds
     for fund in self.funds.values():
@@ -292,8 +308,38 @@ class Person(object):
     self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired)
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
-    if self.age >= 60 and not self.retired:
+    assets = sum(fund.amount for fund in self.funds.values())
+    gross_income = sum(receipt.amount for receipt in year_rec.incomes) + sum(receipt.amount for receipt in year_rec.withdrawals)
+    ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
+    if self.age >= world.MINIMUM_RETIREMENT_AGE and not self.retired:
       self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings)
+
+    if self.retired:
+      self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
+      if assets <= 0:
+        self.has_been_ruined=True
+        self.accumulators.fraction_retirement_years_ruined.UpdateOneValue(1)
+      else:
+        self.accumulators.fraction_retirement_years_ruined.UpdateOneValue(0)
+      self.accumulators.fraction_retirement_years_below_ympe.UpdateOneValue(1 if assets < ympe else 0)
+      self.accumulators.fraction_retirement_years_below_twice_ympe.UpdateOneValue(1 if assets < 2*ympe else 0)
+      if gross_income < world.LICO_SINGLE_CITY_WP:
+        self.has_experienced_income_under_lico = True
+        self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(1)
+      else:
+        self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(0)
+    else:
+      self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
+
+    if self.age >= world.MAXIMUM_RETIREMENT_AGE:
+      gis = sum(receipt.amount for receipt in year_rec.incomes
+                if receipt.income_type == incomes.INCOME_TYPE_GIS)
+      if gis > 0:
+        self.has_received_gis = True
+        self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(1)
+      else:
+        self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
+      self.accumulators.benefits_gis.UpdateOneValue(gis)
 
     self.age += 1
     self.year += 1
@@ -301,6 +347,21 @@ class Person(object):
 
   def EndOfLifeCalcs(self, year_rec):
     """Calculations that happen upon death"""
+    if self.retired:
+      asset_comparison_level = self.assets_at_retirement
+    else:
+      asset_comparison_level = sum(fund.amount for fund in self.funds.values())
+    estate = self.CalcEndOfLifeEstate(year_rec)
+    self.accumulators.distributable_estate.UpdateOneValue(estate)
+    self.accumulators.fraction_persons_ruined.UpdateOneValue(1 if self.has_been_ruined else 0)
+    self.accumulators.fraction_retirees_receiving_gis.UpdateOneValue(1 if self.has_received_gis else 0)
+    self.accumulators.fraction_retirees_ever_below_lico.UpdateOneValue(1 if self.has_experienced_income_under_lico else 0)
+
+    self.accumulators.fraction_persons_with_withdrawals_below_retirement_assets.UpdateOneValue(1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
+    if self.retired:
+      self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
+    self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(self.total_lifetime_withdrawals - self.total_working_savings)
+    self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
   def LiveLife(self):
     """Run through one lifetime"""
