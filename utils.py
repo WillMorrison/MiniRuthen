@@ -72,6 +72,14 @@ class SummaryStatsAccumulator(object):
     """Returns the sample standard deviation, or NaN if fewer than 2 updates."""
     return math.sqrt(self.variance)
 
+  @property
+  def stderr(self):
+    """Returns the standard error, or NaN if fewer than 2 updates."""
+    if self.n:
+      return math.sqrt(self.variance/self.n)
+    else:
+      return float('nan')
+
 
 class QuantileAccumulator(object):
   """This uses a streaming parallel histogram building algorithm described by

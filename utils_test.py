@@ -19,6 +19,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.M2, 5200)
     self.assertAlmostEqual(acc.variance, 216.666666667)
     self.assertAlmostEqual(acc.stddev, 14.719601444)
+    self.assertAlmostEqual(acc.stderr, 2.9439203)
 
   def testSummaryStatsAccumulatorUpdateOneValueBigNumbers(self):
     acc = utils.SummaryStatsAccumulator()
@@ -30,6 +31,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.M2, 5200)
     self.assertAlmostEqual(acc.variance, 216.666666667)
     self.assertAlmostEqual(acc.stddev, 14.719601444)
+    self.assertAlmostEqual(acc.stderr, 2.9439203)
   
   def testSummaryStatsAccumulatorUpdateSubsample(self):
     acc1 = utils.SummaryStatsAccumulator()
@@ -45,6 +47,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
     self.assertAlmostEqual(acc1.stddev, 14.719601444)
+    self.assertAlmostEqual(acc1.stderr, 2.9439203)
   
   def testSummaryStatsAccumulatorUpdateSubsampleBigNumbers(self):
     acc1 = utils.SummaryStatsAccumulator()
@@ -60,6 +63,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
     self.assertAlmostEqual(acc1.stddev, 14.719601444)
+    self.assertAlmostEqual(acc1.stderr, 2.9439203)
   
   def testSummaryStatsAccumulatorUpdateSubsampleEmpty(self):
     acc = utils.SummaryStatsAccumulator()
@@ -67,7 +71,7 @@ class UtilsTest(unittest.TestCase):
 
     self.assertEqual(acc.n, 0)
     self.assertEqual(acc.mean, 0)
-    self.assertEqual(acc.M2, 00)
+    self.assertEqual(acc.M2, 0)
 
   def testSummaryStatsAccumulatorUpdateAccumulator(self):
     acc1 = utils.SummaryStatsAccumulator()
