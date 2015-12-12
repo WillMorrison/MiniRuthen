@@ -76,7 +76,7 @@ def WriteFitnessFunctionCompositionTable(accumulators, weights, out):
     FitnessFunctionCompositionRow("AverageDistributableEstate", accumulators.distributable_estate.mean, accumulators.distributable_estate.stderr, weights["AverageDistributableEstate"], weights["AverageDistributableEstate"] * accumulators.distributable_estate.mean),
   ]
 
-  writer = csv.writer(out)
+  writer = csv.writer(out, lineterminator='\n')
   writer.writerow(FitnessFunctionCompositionRow._fields)
   for row in rows:
     writer.writerow(row)
@@ -136,9 +136,6 @@ if __name__ == '__main__':
   parser.add_argument("--consumption_avg_retirement_below_fraction_avg_working", help="fitness component weight", type=float, default=0)
   parser.add_argument("--average_distributable_estate", help="fitness component weight", type=float, default=0)
 
-  
-
-  
   args = parser.parse_args()
 
   strategy = person.Strategy(
