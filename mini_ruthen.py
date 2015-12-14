@@ -84,7 +84,7 @@ def WriteFitnessFunctionCompositionTable(accumulators, weights, out):
 
 if __name__ == '__main__':
   # Set up flags
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
 
   parser.add_argument('--number', help='Number of lives to simulate', type=int, default=1000)
   parser.add_argument('--gender', help='The gender of the people to simulate', choices=[person.MALE, person.FEMALE], default=person.FEMALE)
