@@ -160,6 +160,13 @@ class UtilsTest(unittest.TestCase):
 
     self.assertHistogramsEqual(acc1.bins, [(9, 2), (19, 1), (22, 1)])
 
+  def testQuantileAccumulatorUpdateHistogramManyDuplicateCentroids(self):
+    acc = utils.QuantileAccumulator(max_bins=5)
+    acc.bins = [(2, 1), (2, 1), (2, 1), (2, 1), (2, 1)]
+    acc.UpdateHistogram([(1, 1), (1, 1), (1, 1)])
+
+    self.assertHistogramsEqual(acc.bins, [(1, 3), (2, 5)])
+
   def testQuantileAccumulatorUpdateHistogramPaperExample(self):
     acc = utils.QuantileAccumulator(max_bins=5)
     acc.bins = [(2, 1), (9.5, 2), (17.5, 2), (23, 1), (36,1)]

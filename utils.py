@@ -94,25 +94,33 @@ class QuantileAccumulator(object):
 
   def _Merge(self):
     """Merges bins if there are more than max_bins. Expects self.bins to be sorted"""
+
     # Merge bins with identical centroids first, regardless of self.max_bins
-    while len(self.bins) > 1: 
-      # Find the two closest bins
-      sep, i = min((self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1))
-      if sep: break
+    zero_diffs = [(self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1) if not self.bins[i+1][0] - self.bins[i][0]]
+    for _, i in reversed(zero_diffs):
       self.bins[i:i+2] = [(self.bins[i][0], self.bins[i][1]+self.bins[i+1][1])]
 
     # Now merge other bins until we have at most self.max_bins
+    diffs = [(self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1)]
+    removed = []
     while len(self.bins) > self.max_bins:
       # Find the two closest bins
-      sep, i = min((self.bins[i+1][0] - self.bins[i][0], i) for i in range(len(self.bins)-1))
+      sep, i = min(diffs)
+      i_adjustment = bisect.bisect_left(removed, i)
+      removed.insert(i_adjustment, i)
+      i -= i_adjustment
 
       # Merge them
       self.bins[i:i+2] = [(
           (self.bins[i][0]*self.bins[i][1] + self.bins[i+1][0]*self.bins[i+1][1])/(self.bins[i][1]+self.bins[i+1][1]),
           self.bins[i][1]+self.bins[i+1][1])]
+      if i:
+        diffs[i-1:i+1] = [(self.bins[i][0] - self.bins[i-1][0], diffs[i-1][1])]
+      else:
+        diffs[0:2] = [(self.bins[1][0] - self.bins[0][0], diffs[1][1])]
 
   def UpdateOneValue(self, value):
-    i = bisect.insort_left(self.bins, (value, 1))
+    bisect.insort_left(self.bins, (value, 1))
     self._Merge()
 
   def UpdateHistogram(self, bins):
