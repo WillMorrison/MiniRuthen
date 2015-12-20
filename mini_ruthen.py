@@ -41,8 +41,8 @@ def RunPopulation(strategy, gender, n):
 
 FitnessFunctionCompositionRow = collections.namedtuple("FitnessFunctionCompositionRow", ["name", "value", "stderr", "weight", "contribution"])
 
-def WriteFitnessFunctionCompositionTable(accumulators, weights, out):
-  rows = [
+def GetFitnessFunctionCompositionTableRows(accumulators, weights):
+  return [
     FitnessFunctionCompositionRow("ConsumptionAvgLifetime", accumulators.lifetime_consumption_summary.mean, accumulators.lifetime_consumption_summary.stderr, weights["ConsumptionAvgLifetime"], weights["ConsumptionAvgLifetime"] * accumulators.lifetime_consumption_summary.mean),
     FitnessFunctionCompositionRow("ConsumptionAvgWorking", accumulators.working_consumption_summary.mean, accumulators.working_consumption_summary.stderr, weights["ConsumptionAvgWorking"], weights["ConsumptionAvgWorking"] * accumulators.working_consumption_summary.mean),
     FitnessFunctionCompositionRow("ConsumptionAvgRetired", accumulators.retired_consumption_summary.mean, accumulators.retired_consumption_summary.stderr, weights["ConsumptionAvgRetired"], weights["ConsumptionAvgRetired"] * accumulators.retired_consumption_summary.mean),
@@ -76,10 +76,29 @@ def WriteFitnessFunctionCompositionTable(accumulators, weights, out):
     FitnessFunctionCompositionRow("AverageDistributableEstate", accumulators.distributable_estate.mean, accumulators.distributable_estate.stderr, weights["AverageDistributableEstate"], weights["AverageDistributableEstate"] * accumulators.distributable_estate.mean),
   ]
 
+def WriteFitnessFunctionCompositionTable(rows, out):
   writer = csv.writer(out, lineterminator='\n')
   writer.writerow(FitnessFunctionCompositionRow._fields)
   for row in rows:
     writer.writerow(row)
+
+def WriteStrategyTable(strategy, out):
+  writer = csv.writer(out, lineterminator='\n')
+  writer.writerow(("parameter", "value"))
+  writer.writerow(("Planned Retirement Age", strategy.planned_retirement_age))
+  writer.writerow(("Savings Threshold", strategy.savings_threshold)),
+  writer.writerow(("Savings Rate", strategy.savings_rate)),
+  writer.writerow(("Savings RRSP Fraction", strategy.savings_rrsp_fraction)),
+  writer.writerow(("Savings TFSA Fraction", strategy.savings_tfsa_fraction)),
+  writer.writerow(("LICO Target Fraction", strategy.lico_target_fraction)),
+  writer.writerow(("Working Period Drawdown TFSA Fraction", strategy.working_period_drawdown_tfsa_fraction)),
+  writer.writerow(("Working Period Drawdown NonReg Fraction", strategy.working_period_drawdown_nonreg_fraction)),
+  writer.writerow(("OAS Bridging Fraction", strategy.oas_bridging_fraction)),
+  writer.writerow(("Drawdown CED Fraction", strategy.drawdown_ced_fraction)),
+  writer.writerow(("Initial CD Fraction", strategy.initial_cd_fraction)),
+  writer.writerow(("Drawdown Preferred RRSP Fraction", strategy.drawdown_preferred_rrsp_fraction)),
+  writer.writerow(("Drawdown Preferred TFSA Fraction", strategy.drawdown_preferred_tfsa_fraction)),
+  writer.writerow(("Reinvestment Preference TFSA Fraction", strategy.reinvestment_preference_tfsa_fraction))
 
 
 if __name__ == '__main__':
@@ -88,6 +107,7 @@ if __name__ == '__main__':
 
   parser.add_argument('--number', help='Number of lives to simulate', type=int, default=1000)
   parser.add_argument('--gender', help='The gender of the people to simulate', choices=[person.MALE, person.FEMALE], default=person.FEMALE)
+  parser.add_argument('--use_multiprocessing', help='Use multiprocessing', type=bool, default=True)
 
   parser.add_argument("--planned_retirement_age", help="strategy parameter", type=int, default=65)
   parser.add_argument("--savings_threshold", help="strategy parameter", type=float, default=0)
@@ -189,7 +209,13 @@ if __name__ == '__main__':
   }
 
   # Run lives
-  accumulators = RunPopulation(strategy, args.gender, args.number)
+  if args.use_multiprocessing:
+    accumulators = RunPopulation(strategy, args.gender, args.number)
+  else:
+    accumulators = RunPopulationWorker(strategy, args.gender, args.number)
 
   # Output reports
-  WriteFitnessFunctionCompositionTable(accumulators, weights, sys.stdout)
+  fitness_fcn_comp_rows = GetFitnessFunctionCompositionTableRows(accumulators, weights)
+  WriteStrategyTable(strategy, sys.stdout)
+  sys.stdout.write('\n')
+  WriteFitnessFunctionCompositionTable(fitness_fcn_comp_rows, sys.stdout)
