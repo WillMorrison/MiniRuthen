@@ -24,6 +24,11 @@ Strategy = collections.namedtuple("Strategy",
                                    "drawdown_preferred_tfsa_fraction",
                                    "reinvestment_preference_tfsa_fraction",])
 
+EMPLOYED = 0
+UNEMPLOYED = 1
+RETIRED = 2
+INVOLUNTARILY_RETIRED = 3
+
 class Person(object):
   
   def __init__(self, strategy, gender=FEMALE):
@@ -55,6 +60,8 @@ class Person(object):
     self.gis_years = 0
     self.gross_income_below_lico_years = 0
     self.no_assets_years = 0
+
+    self.period_years = {EMPLOYED: 0, UNEMPLOYED: 0, RETIRED: 0, INVOLUNTARILY_RETIRED: 0}
 
   def OnRetirement(self):
     """This deals with events happening at the point of retirement."""
@@ -138,6 +145,7 @@ class Person(object):
     else:
       self.capital_loss_carry_forward += -capital_gains
       taxable_capital_gains = 0
+    year_rec.taxable_capital_gains = taxable_capital_gains
 
     cpp_death_benefit = world.CPP_DEATH_BENEFIT if year_rec.is_dead else 0
 
@@ -182,6 +190,7 @@ class Person(object):
     # Taxable Income
     applied_capital_loss_amount = min(taxable_capital_gains, self.capital_loss_carry_forward * world.CG_INCLUSION_RATE)
     taxable_income = max(0, net_income - (net_federal_supplements_deduction + applied_capital_loss_amount))
+    year_rec.taxable_income = taxable_income
 
     # Age amount
     age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION) * world.AGE_AMOUNT_REDUCTION_RATE
@@ -311,17 +320,52 @@ class Person(object):
     non_hst_consumption = min(cash, world.SALES_TAX_EXEMPTION)
     hst_consumption = cash - non_hst_consumption
     year_rec.consumption = hst_consumption / (1 + world.HST_RATE) + non_hst_consumption
+    year_rec.sales_taxes = hst_consumption * world.HST_RATE 
 
     return year_rec
 
 
+  def Period(self, year_rec):
+    if self.retired and self.age < self.strategy.planned_retirement_age:
+      return INVOLUNTARILY_RETIRED
+    elif self.retired:
+      return RETIRED
+    elif not year_rec.is_dead and year_rec.is_employed:
+      return EMPLOYED
+    else:
+      return UNEMPLOYED
+
+
   def AnnualReview(self, year_rec):
     """End of year calculations for a live person"""
-    self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired)
+    period = self.Period(year_rec)
+    self.period_years[period] += 1
+    self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired, period)
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+    cpp = sum(receipt.amount for receipt in year_rec.incomes
+              if receipt.income_type == incomes.INCOME_TYPE_CPP)
+    ei_benefits =  sum(receipt.amount for receipt in year_rec.incomes
+                       if receipt.income_type == incomes.INCOME_TYPE_EI)
+    gis = sum(receipt.amount for receipt in year_rec.incomes
+              if receipt.income_type == incomes.INCOME_TYPE_GIS)
+    oas = sum(receipt.amount for receipt in year_rec.incomes
+              if receipt.income_type == incomes.INCOME_TYPE_OAS)
     assets = sum(fund.amount for fund in self.funds.values())
     gross_income = sum(receipt.amount for receipt in year_rec.incomes) + sum(receipt.amount for receipt in year_rec.withdrawals)
+    rrsp_withdrawals = sum(receipt.amount for receipt in year_rec.withdrawals
+                           if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
+    tfsa_withdrawals = sum(receipt.amount for receipt in year_rec.withdrawals
+                           if receipt.fund_type == funds.FUND_TYPE_TFSA)
+    nonreg_withdrawals = sum(receipt.amount for receipt in year_rec.withdrawals
+                             if receipt.fund_type == funds.FUND_TYPE_NONREG)
+    savings = sum(receipt.amount for receipt in year_rec.deposits)
+    rrsp_deposits = sum(receipt.amount for receipt in year_rec.deposits
+                        if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
+    tfsa_deposits = sum(receipt.amount for receipt in year_rec.deposits
+                        if receipt.fund_type == funds.FUND_TYPE_TFSA)
+    nonreg_deposits = sum(receipt.amount for receipt in year_rec.deposits
+                          if receipt.fund_type == funds.FUND_TYPE_NONREG)
     ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
 
     if gross_income < world.LICO_SINGLE_CITY_WP:
@@ -348,28 +392,21 @@ class Person(object):
       else:
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(0)
       self.accumulators.retirement_taxes.UpdateOneValue(year_rec.taxes_payable)
-      cpp = sum(receipt.amount for receipt in year_rec.incomes
-                if receipt.income_type == incomes.INCOME_TYPE_CPP)
       if cpp > 0:
         self.accumulators.positive_cpp_benefits.UpdateOneValue(cpp)
-    else:
+    else: # Working period
       self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
       self.accumulators.earnings_working.UpdateOneValue(earnings)
       self.accumulators.working_annual_ei_cpp_deductions.UpdateOneValue(year_rec.cpp_contribution + year_rec.ei_premium)
       self.accumulators.working_taxes.UpdateOneValue(year_rec.taxes_payable)
-      savings = sum(receipt.amount for receipt in year_rec.deposits)
       if earnings > 0:
         self.positive_earnings_years += 1
         self.accumulators.fraction_earnings_saved.UpdateOneValue(savings/earnings)
-      ei_benefits =  sum(receipt.amount for receipt in year_rec.incomes
-                         if receipt.income_type == incomes.INCOME_TYPE_EI)
       if ei_benefits > 0:
         self.ei_years += 1
         self.accumulators.positive_ei_benefits.UpdateOneValue(ei_benefits)
 
     if self.age >= world.MAXIMUM_RETIREMENT_AGE:
-      gis = sum(receipt.amount for receipt in year_rec.incomes
-                if receipt.income_type == incomes.INCOME_TYPE_GIS)
       if gis > 0:
         self.gis_years += 1
         self.has_received_gis = True
@@ -378,6 +415,25 @@ class Person(object):
       else:
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
       self.accumulators.benefits_gis.UpdateOneValue(gis)
+
+
+    self.accumulators.period_earnings.UpdateOneValue(earnings, period)
+    self.accumulators.period_cpp_benefits.UpdateOneValue(cpp, period)
+    self.accumulators.period_oas_benefits.UpdateOneValue(oas, period)
+    self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains, period)
+    self.accumulators.period_gis_benefits.UpdateOneValue(gis, period)
+    self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.cpp_contribution + year_rec.ei_premium, period)
+    self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals, period)
+    self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals, period)
+    self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals, period)
+    self.accumulators.period_cpp_contributions.UpdateOneValue(year_rec.cpp_contribution, period)
+    self.accumulators.period_ei_premiums.UpdateOneValue(year_rec.ei_premium, period)
+    self.accumulators.period_taxable_income.UpdateOneValue(year_rec.taxable_income, period)
+    self.accumulators.period_income_tax.UpdateOneValue(year_rec.taxes_payable, period)
+    self.accumulators.period_sales_tax.UpdateOneValue(year_rec.sales_taxes, period)
+    self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
+    self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
+    self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
 
     self.age += 1
     self.year += 1
@@ -410,6 +466,8 @@ class Person(object):
     self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
     self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
     self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
+    for period in self.period_years:
+      self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
 
   def LiveLife(self):
     """Run through one lifetime"""

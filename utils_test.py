@@ -1,5 +1,6 @@
 import unittest
 import utils
+import person
 import world
 
 class UtilsTest(unittest.TestCase):
@@ -273,7 +274,7 @@ class UtilsTest(unittest.TestCase):
 
   def testAccumulatorBundleUpdateConsumptionWorking(self):
     bundle = utils.AccumulatorBundle()
-    bundle.UpdateConsumption(100, year=world.BASE_YEAR+1, is_retired=False)
+    bundle.UpdateConsumption(100, year=world.BASE_YEAR+1, is_retired=False, period=person.EMPLOYED)
 
     self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
     self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
@@ -289,7 +290,7 @@ class UtilsTest(unittest.TestCase):
   def testAccumulatorBundleUpdateConsumptionRetiredPreDisability(self):
     sim_years = world.AVG_DISABILITY_AGE - world.START_AGE
     bundle = utils.AccumulatorBundle()
-    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True)
+    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True, period=person.RETIRED)
 
     self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
     self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
@@ -305,7 +306,7 @@ class UtilsTest(unittest.TestCase):
   def testAccumulatorBundleUpdateConsumptionRetiredPostDisability(self):
     sim_years = world.AVG_DISABILITY_AGE - world.START_AGE + 1
     bundle = utils.AccumulatorBundle()
-    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True)
+    bundle.UpdateConsumption(100, year=sim_years + world.BASE_YEAR, is_retired=True, period=person.RETIRED)
 
     self.assertEqual(bundle.lifetime_consumption_summary.mean, 100)
     self.assertHistogramsEqual(bundle.lifetime_consumption_hist.bins, [(100, 1)])
@@ -321,9 +322,9 @@ class UtilsTest(unittest.TestCase):
   def testAccumulatorBundleMerge(self):
     sim_years = world.AVG_DISABILITY_AGE - world.START_AGE
     bundle1 = utils.AccumulatorBundle()
-    bundle1.UpdateConsumption(200, year=sim_years + world.BASE_YEAR, is_retired=True)
+    bundle1.UpdateConsumption(200, year=sim_years + world.BASE_YEAR, is_retired=True, period=person.RETIRED)
     bundle2 = utils.AccumulatorBundle()
-    bundle2.UpdateConsumption(100, year=world.BASE_YEAR + 1, is_retired=False)
+    bundle2.UpdateConsumption(100, year=world.BASE_YEAR + 1, is_retired=False, period=person.EMPLOYED)
     bundle1.Merge(bundle2)
 
     self.assertEqual(bundle1.lifetime_consumption_summary.mean, 150)

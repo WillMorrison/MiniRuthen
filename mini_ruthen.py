@@ -112,6 +112,39 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, out):
   writer.writerow(("Average Years with No Financial Assets at BoY", accumulators.years_with_no_assets.mean))
   #writer.writerow(("Replacement Rate (Consumption Basis)", accumulators.replacement_rate.mean))
 
+def WritePeriodSpecificTable(accumulators, out):
+  def GetRow(name, accumulator):
+    return [name,
+            accumulator.Query([person.EMPLOYED, person.UNEMPLOYED, person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean,
+            accumulator.Query([person.EMPLOYED]).mean,
+            accumulator.Query([person.UNEMPLOYED]).mean,
+            accumulator.Query([person.RETIRED]).mean,
+            accumulator.Query([person.INVOLUNTARILY_RETIRED]).mean]
+  
+  writer = csv.writer(out, lineterminator='\n')
+  writer.writerow(("name", "lifetime", "employed", "unemployed", "planned retirement", "unplanned retirement"))
+  years_row = GetRow("Simulated years", accumulators.period_years)
+  years_row[1] = None
+  writer.writerow(years_row)
+  writer.writerow(GetRow("Earnings", accumulators.period_earnings))
+  writer.writerow(GetRow("CPP benefits", accumulators.period_cpp_benefits))
+  writer.writerow(GetRow("OAS benefits", accumulators.period_oas_benefits))
+  writer.writerow(GetRow("Taxable capital gains", accumulators.period_taxable_gains))
+  writer.writerow(GetRow("GIS benefits", accumulators.period_gis_benefits))
+  writer.writerow(GetRow("Social benefits repaid", accumulators.period_social_benefits_repaid))
+  writer.writerow(GetRow("RRSP withdrawals", accumulators.period_rrsp_withdrawals))
+  writer.writerow(GetRow("TFSA withdrawals", accumulators.period_tfsa_withdrawals))
+  writer.writerow(GetRow("Nonregistered withdrawals", accumulators.period_nonreg_withdrawals))
+  writer.writerow(GetRow("CPP contributions", accumulators.period_cpp_contributions))
+  writer.writerow(GetRow("EI premiums", accumulators.period_ei_premiums))
+  writer.writerow(GetRow("Taxable income", accumulators.period_taxable_income))
+  writer.writerow(GetRow("Income tax", accumulators.period_income_tax))
+  writer.writerow(GetRow("Sales tax", accumulators.period_sales_tax))
+  writer.writerow(GetRow("Consumption", accumulators.period_consumption))
+  writer.writerow(GetRow("RRSP savings", accumulators.period_rrsp_savings))
+  writer.writerow(GetRow("TFSA savings", accumulators.period_tfsa_savings))
+  writer.writerow(GetRow("Nonregistered savings", accumulators.period_nonreg_savings))
+
 
 def WriteStrategyTable(strategy, out):
   writer = csv.writer(out, lineterminator='\n')
@@ -254,3 +287,5 @@ if __name__ == '__main__':
   sys.stdout.write('\n')
   fitness_fcn_comp_rows = GetFitnessFunctionCompositionTableRows(accumulators, weights)
   WriteFitnessFunctionCompositionTable(fitness_fcn_comp_rows, sys.stdout)
+  sys.stdout.write('\n')
+  WritePeriodSpecificTable(accumulators, sys.stdout)

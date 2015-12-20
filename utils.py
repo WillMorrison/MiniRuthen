@@ -157,14 +157,21 @@ class QuantileAccumulator(object):
       return self.bins[i-1][0] + bin_frac * (self.bins[i][0] - self.bins[i-1][0])
 
 
+class PicklableLambda(object):
+  """cPickle is dumb, but we need lambdas."""
+  def __init__(self, callable_object, args=None):
+    self.callable_object = callable_object
+    self.args = args or {}
+
+  def __call__(self):
+    return self.callable_object(**self.args)
+
+
 class KeyedAccumulator(object):
   """Keeps track of subaccumulators by key and allows querying."""
 
   def __init__(self, subaccumulator_class, subaccumulator_args=None):
-    if subaccumulator_args is None:
-      subaccumulator_args = {}
-
-    self.default_factory = lambda: subaccumulator_class(**subaccumulator_args)
+    self.default_factory = PicklableLambda(subaccumulator_class, subaccumulator_args)
     self._accumulators = collections.defaultdict(self.default_factory)
 
   def UpdateOneValue(self, value, key):
@@ -231,13 +238,50 @@ class AccumulatorBundle(object):
     self.years_income_below_lico = SummaryStatsAccumulator()
     self.years_with_no_assets = SummaryStatsAccumulator()
     self.replacement_rate = SummaryStatsAccumulator()
+
+    # Accumulators for period specific tables
+    self.period_years = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_earnings = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_cpp_benefits = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_oas_benefits = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_taxable_gains = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_gis_benefits = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_social_benefits_repaid = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_rrsp_withdrawals = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_tfsa_withdrawals = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_nonreg_withdrawals = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_cpp_contributions = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_ei_premiums = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_taxable_income = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_income_tax = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_sales_tax = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_consumption = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_rrsp_savings = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_tfsa_savings = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_nonreg_savings = KeyedAccumulator(SummaryStatsAccumulator)
+    #self.period_withdrawals_reinvested = KeyedAccumulator(SummaryStatsAccumulator)
+    #self.period_fund_growth = KeyedAccumulator(SummaryStatsAccumulator)
+    #self.period_gross_estate = KeyedAccumulator(SummaryStatsAccumulator)
+    #self.period_estate_taxes = KeyedAccumulator(SummaryStatsAccumulator)
+    #self.period_distributable estate = KeyedAccumulator(SummaryStatsAccumulator)
+
+    # Accumulators for age specific table
+    self.persons_alive_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.gross_earnings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.tax_contributions_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.savings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.consumption_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     
-  def UpdateConsumption(self, consumption, year, is_retired):
+  def UpdateConsumption(self, consumption, year, is_retired, period):
     discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)
     age = year - world.BASE_YEAR + world.START_AGE
 
     self.lifetime_consumption_summary.UpdateOneValue(consumption)
     self.lifetime_consumption_hist.UpdateOneValue(consumption)
+    self.consumption_by_age.UpdateOneValue(consumption, age)
+    self.period_consumption.UpdateOneValue(consumption, period)
     self.discounted_lifetime_consumption_summary.UpdateOneValue(discounted_consumption)
     if is_retired:
       self.retired_consumption_summary.UpdateOneValue(consumption)
