@@ -31,11 +31,12 @@ INVOLUNTARILY_RETIRED = 3
 
 class Person(object):
   
-  def __init__(self, strategy, gender=FEMALE):
+  def __init__(self, strategy, gender=FEMALE, basic_only=False):
     self.year = world.BASE_YEAR
     self.age = world.START_AGE
     self.gender = gender
     self.strategy = strategy
+    self.basic_only=basic_only
     self.employed_last_year = True
     self.retired = False
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
@@ -418,30 +419,31 @@ class Person(object):
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
       self.accumulators.benefits_gis.UpdateOneValue(gis)
 
-    self.accumulators.period_earnings.UpdateOneValue(earnings, period)
-    self.accumulators.period_cpp_benefits.UpdateOneValue(cpp, period)
-    self.accumulators.period_oas_benefits.UpdateOneValue(oas, period)
-    self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains, period)
-    self.accumulators.period_gis_benefits.UpdateOneValue(gis, period)
-    self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.total_social_benefit_repayment, period)
-    self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals, period)
-    self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals, period)
-    self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals, period)
-    self.accumulators.period_cpp_contributions.UpdateOneValue(year_rec.cpp_contribution, period)
-    self.accumulators.period_ei_premiums.UpdateOneValue(year_rec.ei_premium, period)
-    self.accumulators.period_taxable_income.UpdateOneValue(year_rec.taxable_income, period)
-    self.accumulators.period_income_tax.UpdateOneValue(year_rec.taxes_payable, period)
-    self.accumulators.period_sales_tax.UpdateOneValue(year_rec.sales_taxes, period)
-    self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
-    self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
-    self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
+    if not self.basic_only:
+      self.accumulators.period_earnings.UpdateOneValue(earnings, period)
+      self.accumulators.period_cpp_benefits.UpdateOneValue(cpp, period)
+      self.accumulators.period_oas_benefits.UpdateOneValue(oas, period)
+      self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains, period)
+      self.accumulators.period_gis_benefits.UpdateOneValue(gis, period)
+      self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.total_social_benefit_repayment, period)
+      self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals, period)
+      self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals, period)
+      self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals, period)
+      self.accumulators.period_cpp_contributions.UpdateOneValue(year_rec.cpp_contribution, period)
+      self.accumulators.period_ei_premiums.UpdateOneValue(year_rec.ei_premium, period)
+      self.accumulators.period_taxable_income.UpdateOneValue(year_rec.taxable_income, period)
+      self.accumulators.period_income_tax.UpdateOneValue(year_rec.taxes_payable, period)
+      self.accumulators.period_sales_tax.UpdateOneValue(year_rec.sales_taxes, period)
+      self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
+      self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
+      self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
 
-    self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
-    self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
-    self.accumulators.tax_contributions_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
-    self.accumulators.benefits_by_age.UpdateOneValue(ei_benefits+cpp+oas+gis, self.age)
-    self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
-    self.accumulators.withdrawals_by_age.UpdateOneValue(total_withdrawals, self.age)
+      self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
+      self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
+      self.accumulators.tax_contributions_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
+      self.accumulators.benefits_by_age.UpdateOneValue(ei_benefits+cpp+oas+gis, self.age)
+      self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
+      self.accumulators.withdrawals_by_age.UpdateOneValue(total_withdrawals, self.age)
 
     self.age += 1
     self.year += 1
@@ -465,17 +467,18 @@ class Person(object):
     self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(self.total_lifetime_withdrawals - self.total_working_savings)
     self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
-    self.accumulators.age_at_death.UpdateOneValue(self.age)
-    self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.retired and self.age < self.strategy.planned_retirement_age else 0)
-    self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
-    self.accumulators.years_worked_with_earnings.UpdateOneValue(self.positive_earnings_years)
-    self.accumulators.positive_savings_years.UpdateOneValue(self.positive_savings_years)
-    self.accumulators.years_receiving_ei.UpdateOneValue(self.ei_years)
-    self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
-    self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
-    self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
-    for period in self.period_years:
-      self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
+    if not self.basic_only:
+      self.accumulators.age_at_death.UpdateOneValue(self.age)
+      self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.retired and self.age < self.strategy.planned_retirement_age else 0)
+      self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
+      self.accumulators.years_worked_with_earnings.UpdateOneValue(self.positive_earnings_years)
+      self.accumulators.positive_savings_years.UpdateOneValue(self.positive_savings_years)
+      self.accumulators.years_receiving_ei.UpdateOneValue(self.ei_years)
+      self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
+      self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
+      self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
+      for period in self.period_years:
+        self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
 
   def LiveLife(self):
     """Run through one lifetime"""

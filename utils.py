@@ -191,7 +191,7 @@ class KeyedAccumulator(object):
 
 
 class AccumulatorBundle(object):
-  def __init__(self):
+  def __init__(self, basic_only=False):
     # Accumulators needed for fitness function
     self.lifetime_consumption_summary = SummaryStatsAccumulator()
     self.lifetime_consumption_hist = QuantileAccumulator()
@@ -218,6 +218,9 @@ class AccumulatorBundle(object):
     self.lifetime_withdrawals_less_savings = SummaryStatsAccumulator()
     self.retirement_consumption_less_working_consumption = SummaryStatsAccumulator()
     self.distributable_estate = SummaryStatsAccumulator()
+
+    if basic_only:
+      return
 
     # Accumulators needed for summary table
     self.age_at_death = SummaryStatsAccumulator()
@@ -280,8 +283,6 @@ class AccumulatorBundle(object):
 
     self.lifetime_consumption_summary.UpdateOneValue(consumption)
     self.lifetime_consumption_hist.UpdateOneValue(consumption)
-    self.consumption_by_age.UpdateOneValue(consumption, age)
-    self.period_consumption.UpdateOneValue(consumption, period)
     self.discounted_lifetime_consumption_summary.UpdateOneValue(discounted_consumption)
     if is_retired:
       self.retired_consumption_summary.UpdateOneValue(consumption)
@@ -291,6 +292,9 @@ class AccumulatorBundle(object):
     else:
       self.working_consumption_summary.UpdateOneValue(consumption)
       self.working_consumption_hist.UpdateOneValue(consumption)
+    if hasattr(self, 'consumption_by_age'):
+      self.consumption_by_age.UpdateOneValue(consumption, age)
+      self.period_consumption.UpdateOneValue(consumption, period)
 
   def Merge(self, bundle):
     """Merge in another AccumulatorBundle."""
