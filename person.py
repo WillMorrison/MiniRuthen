@@ -55,7 +55,7 @@ class Person(object):
     self.total_lifetime_withdrawals = 0
     self.total_working_savings = 0
 
-    self.positive_earnings_years = world.PRE_SIM_POSITIVE_EARNING_YEARS
+    self.positive_earnings_years = 0
     self.positive_savings_years = 0
     self.ei_years = 0
     self.gis_years = 0
@@ -440,7 +440,9 @@ class Person(object):
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
-      self.accumulators.tax_contributions_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
+      self.accumulators.income_tax_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
+      self.accumulators.ei_premium_by_age.UpdateOneValue(year_rec.ei_premium, self.age)
+      self.accumulators.cpp_contributions_by_age.UpdateOneValue(year_rec.cpp_contribution, self.age)
       self.accumulators.benefits_by_age.UpdateOneValue(ei_benefits+cpp+oas+gis, self.age)
       self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
       self.accumulators.withdrawals_by_age.UpdateOneValue(total_withdrawals, self.age)

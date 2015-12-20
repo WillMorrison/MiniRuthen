@@ -271,7 +271,9 @@ class AccumulatorBundle(object):
     # Accumulators for age specific table
     self.persons_alive_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.gross_earnings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
-    self.tax_contributions_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.income_tax_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.ei_premium_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.cpp_contributions_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.savings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)

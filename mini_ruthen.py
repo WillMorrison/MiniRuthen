@@ -150,7 +150,9 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
     return [age,
             accumulators.persons_alive_by_age.Query([age]).n,
             accumulators.gross_earnings_by_age.Query([age]).mean,
-            accumulators.tax_contributions_by_age.Query([age]).mean,
+            accumulators.income_tax_by_age.Query([age]).mean,
+            accumulators.ei_premium_by_age.Query([age]).mean,
+            accumulators.cpp_contributions_by_age.Query([age]).mean,
             accumulators.benefits_by_age.Query([age]).mean,
             accumulators.savings_by_age.Query([age]).mean,
             accumulators.withdrawals_by_age.Query([age]).mean,
@@ -158,7 +160,7 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
             ]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax & EI, CPP Contrib", "EI, CPP, OAS, GIS Benefits", "Total Savings", "Total Withdrawals", "Consumption"))
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "EI, CPP, OAS, GIS Benefits", "Total Savings", "Total Withdrawals", "Consumption"))
   for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
     writer.writerow(GetRow(age))
 
