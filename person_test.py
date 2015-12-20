@@ -203,10 +203,73 @@ class PersonTest(unittest.TestCase):
     self.assertEqual(j_canuck.funds["ced_nonreg"].amount, 400)
     self.assertEqual(j_canuck.cd_drawdown_amount, 30)
 
-  def testIncomeTax(self):
+  def SetupYearRecForIncomeTax(
+      self, earnings=0, oas=0, gis=0, cpp=0, ei=0,
+      rrsp=0, bridging=0,nonreg=0, gains=0, eoy_gains=0,
+      unapplied_losses=0, rrsp_contributions=0,
+      age=30, retired=False):
+    """Set up a person and a year record in one go for testing income tax."""
     j_canuck = person.Person(strategy=self.default_strategy)
+    j_canuck.capital_loss_carry_forward = unapplied_losses
+    j_canuck.age += age - world.START_AGE
+    j_canuck.year += age - world.START_AGE
+    j_canuck.retired = retired
+
     year_rec = utils.YearRecord()
-    # TODO: Get numbers from alternate implementation
+    year_rec.is_retired = j_canuck.retired
+    year_rec.year = j_canuck.year
+    year_rec.incomes.append(incomes.IncomeReceipt(earnings, incomes.INCOME_TYPE_EARNINGS))
+    year_rec.incomes.append(incomes.IncomeReceipt(oas, incomes.INCOME_TYPE_OAS))
+    year_rec.incomes.append(incomes.IncomeReceipt(gis, incomes.INCOME_TYPE_GIS))
+    year_rec.incomes.append(incomes.IncomeReceipt(cpp, incomes.INCOME_TYPE_CPP))
+    year_rec.incomes.append(incomes.IncomeReceipt(ei, incomes.INCOME_TYPE_EI))
+    year_rec.withdrawals.append(funds.WithdrawReceipt(nonreg, gains, funds.FUND_TYPE_NONREG))
+    year_rec.withdrawals.append(funds.WithdrawReceipt(rrsp, 0, funds.FUND_TYPE_RRSP))
+    year_rec.withdrawals.append(funds.WithdrawReceipt(bridging, 0, funds.FUND_TYPE_BRIDGING))
+    year_rec.tax_receipts.append(funds.TaxReceipt(eoy_gains, funds.FUND_TYPE_NONREG))
+    year_rec.deposits.append(funds.DepositReceipt(rrsp_contributions, funds.FUND_TYPE_RRSP))
+
+    return (j_canuck, year_rec)
+
+  def testIncomeTaxEarningsOnly(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(earnings=62000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 11942.71, delta=0.1)
+
+  def testIncomeTaxEIOnly(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(ei=7000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 0, delta=0.1)
+
+  def testIncomeTaxEarningsAndContributions(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(earnings=62000, rrsp_contributions=10000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 8305.21, delta=0.1)
+
+  def testIncomeTaxGainsOnly(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=40000, gains=25000, eoy_gains=15000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxGainsWithCarryForwardLosses(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=40000, gains=40000, unapplied_losses=2000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 212.85, delta=0.1)
+
+  def testIncomeTaxRRSPOnly(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=20000, retired=True, age=65)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxRRSPAndOASAndGIS(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=15000, oas=5000, gis=4000, retired=True, age=65)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxRRSPAndBridging(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=10000, bridging=10000, retired=True, age=62)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
 
 
 if __name__ == '__main__':
