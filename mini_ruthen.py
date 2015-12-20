@@ -5,8 +5,10 @@ import csv
 import multiprocessing
 import os
 import sys
+
 import person
 import utils
+import world
 
 def RunPopulationWorker(strategy, gender, n):
   # Initialize accumulators
@@ -82,6 +84,16 @@ def WriteFitnessFunctionCompositionTable(rows, out):
   for row in rows:
     writer.writerow(row)
 
+def WriteSummaryTable(gender, group_size, accumulators, weights, out):
+  writer = csv.writer(out, lineterminator='\n')
+  writer.writerow(("name", "value"))
+  writer.writerow(("Gender", gender))
+  writer.writerow(("Start Age", world.START_AGE))
+  writer.writerow(("Group Size", group_size))
+  writer.writerow(("Real Return on Investments", world.MEAN_INVESTMENT_RETURN))
+  writer.writerow(("Fitness Function Value", sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))))
+
+
 def WriteStrategyTable(strategy, out):
   writer = csv.writer(out, lineterminator='\n')
   writer.writerow(("parameter", "value"))
@@ -109,6 +121,7 @@ if __name__ == '__main__':
   parser.add_argument('--gender', help='The gender of the people to simulate', choices=[person.MALE, person.FEMALE], default=person.FEMALE)
   parser.add_argument('--use_multiprocessing', help='Use multiprocessing', type=bool, default=True)
 
+  # Strategy parameters (validation runs only)
   parser.add_argument("--planned_retirement_age", help="strategy parameter", type=int, default=65)
   parser.add_argument("--savings_threshold", help="strategy parameter", type=float, default=0)
   parser.add_argument("--savings_rate", help="strategy parameter", type=float, default=0.1)
@@ -124,6 +137,7 @@ if __name__ == '__main__':
   parser.add_argument("--drawdown_preferred_tfsa_fraction", help="strategy parameter", type=float, default=0.5)
   parser.add_argument("--reinvestment_preference_tfsa_fraction", help="strategy parameter", type=float, default=0.8)
 
+  # Fitness function component weights
   parser.add_argument("--consumption_avg_lifetime", help="fitness component weight", type=float, default=0)
   parser.add_argument("--consumption_avg_working", help="fitness component weight", type=float, default=0)
   parser.add_argument("--consumption_avg_retired", help="fitness component weight", type=float, default=0)
@@ -215,7 +229,9 @@ if __name__ == '__main__':
     accumulators = RunPopulationWorker(strategy, args.gender, args.number)
 
   # Output reports
-  fitness_fcn_comp_rows = GetFitnessFunctionCompositionTableRows(accumulators, weights)
+  WriteSummaryTable(args.gender, args.number, accumulators, weights, sys.stdout)
+  sys.stdout.write('\n')
   WriteStrategyTable(strategy, sys.stdout)
   sys.stdout.write('\n')
+  fitness_fcn_comp_rows = GetFitnessFunctionCompositionTableRows(accumulators, weights)
   WriteFitnessFunctionCompositionTable(fitness_fcn_comp_rows, sys.stdout)
