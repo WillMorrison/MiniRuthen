@@ -230,30 +230,5 @@ class AccumulatorBundle(object):
 
   def Merge(self, bundle):
     """Merge in another AccumulatorBundle."""
-    self.lifetime_consumption_summary.UpdateAccumulator(bundle.lifetime_consumption_summary)
-    self.lifetime_consumption_hist.UpdateAccumulator(bundle.lifetime_consumption_hist)
-    self.working_consumption_summary.UpdateAccumulator(bundle.working_consumption_summary)
-    self.working_consumption_hist.UpdateAccumulator(bundle.working_consumption_hist)
-    self.retired_consumption_summary.UpdateAccumulator(bundle.retired_consumption_summary)
-    self.retired_consumption_hist.UpdateAccumulator(bundle.retired_consumption_hist)
-    self.pre_disability_retired_consumption_summary.UpdateAccumulator(bundle.pre_disability_retired_consumption_summary)
-    self.discounted_lifetime_consumption_summary.UpdateAccumulator(bundle.discounted_lifetime_consumption_summary)
-    self.earnings_late_working_summary.UpdateAccumulator(bundle.earnings_late_working_summary)
-    self.fraction_persons_ruined.UpdateAccumulator(bundle.fraction_persons_ruined)
-    self.fraction_retirement_years_ruined.UpdateAccumulator(bundle.fraction_retirement_years_ruined)
-    self.fraction_retirement_years_below_ympe.UpdateAccumulator(bundle.fraction_retirement_years_below_ympe)
-    self.fraction_retirement_years_below_twice_ympe.UpdateAccumulator(bundle.fraction_retirement_years_below_twice_ympe)
-    self.fraction_retirees_receiving_gis.UpdateAccumulator(bundle.fraction_retirees_receiving_gis)
-    self.fraction_retirement_years_receiving_gis.UpdateAccumulator(bundle.fraction_retirement_years_receiving_gis)
-    self.benefits_gis.UpdateAccumulator(bundle.benefits_gis)
-    self.fraction_retirees_ever_below_lico.UpdateAccumulator(bundle.fraction_retirees_ever_below_lico)
-    self.fraction_retirement_years_below_lico.UpdateAccumulator(bundle.fraction_retirement_years_below_lico)
-    self.lico_gap_working.UpdateAccumulator(bundle.lico_gap_working)
-    self.lico_gap_retired.UpdateAccumulator(bundle.lico_gap_retired)
-    self.fraction_persons_with_withdrawals_below_retirement_assets.UpdateAccumulator(bundle.fraction_persons_with_withdrawals_below_retirement_assets)
-    self.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateAccumulator(bundle.fraction_retirees_with_withdrawals_below_retirement_assets)
-    self.lifetime_withdrawals_less_savings.UpdateAccumulator(bundle.lifetime_withdrawals_less_savings)
-    self.retirement_consumption_less_working_consumption.UpdateAccumulator(bundle.retirement_consumption_less_working_consumption)
-    self.distributable_estate.UpdateAccumulator(bundle.distributable_estate)
-
-
+    for attr in self.__dict__:
+      getattr(self, attr).UpdateAccumulator(getattr(bundle, attr))
