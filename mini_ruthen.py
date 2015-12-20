@@ -120,7 +120,7 @@ def WritePeriodSpecificTable(accumulators, out):
             accumulator.Query([person.UNEMPLOYED]).mean,
             accumulator.Query([person.RETIRED]).mean,
             accumulator.Query([person.INVOLUNTARILY_RETIRED]).mean]
-  
+
   writer = csv.writer(out, lineterminator='\n')
   writer.writerow(("name", "lifetime", "employed", "unemployed", "planned retirement", "unplanned retirement"))
   years_row = GetRow("Simulated years", accumulators.period_years)
@@ -145,6 +145,22 @@ def WritePeriodSpecificTable(accumulators, out):
   writer.writerow(GetRow("TFSA savings", accumulators.period_tfsa_savings))
   writer.writerow(GetRow("Nonregistered savings", accumulators.period_nonreg_savings))
 
+def WriteAgeSpecificTable(accumulators, group_size, out):
+  def GetRow(age):
+    return [age,
+            accumulators.persons_alive_by_age.Query([age]).n,
+            accumulators.gross_earnings_by_age.Query([age]).mean,
+            accumulators.tax_contributions_by_age.Query([age]).mean,
+            accumulators.benefits_by_age.Query([age]).mean,
+            accumulators.savings_by_age.Query([age]).mean,
+            accumulators.withdrawals_by_age.Query([age]).mean,
+            accumulators.consumption_by_age.Query([age]).mean,
+            ]
+
+  writer = csv.writer(out, lineterminator='\n')
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax & EI, CPP Contrib", "EI, CPP, OAS, GIS Benefits", "Total Savings", "Total Withdrawals", "Consumption"))
+  for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
+    writer.writerow(GetRow(age))
 
 def WriteStrategyTable(strategy, out):
   writer = csv.writer(out, lineterminator='\n')
@@ -289,3 +305,5 @@ if __name__ == '__main__':
   WriteFitnessFunctionCompositionTable(fitness_fcn_comp_rows, sys.stdout)
   sys.stdout.write('\n')
   WritePeriodSpecificTable(accumulators, sys.stdout)
+  sys.stdout.write('\n')
+  WriteAgeSpecificTable(accumulators, args.number, sys.stdout)

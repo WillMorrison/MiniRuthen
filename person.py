@@ -171,6 +171,7 @@ class Person(object):
 
     # Total Social Benefit Repayment
     total_social_benefit_repayment = ei_benefit_repayment + oas_and_gis_repayment
+    year_rec.total_social_benefit_repayment = total_social_benefit_repayment
 
     # Other Payments Deduction
     gis_income = sum(receipt.amount for receipt in year_rec.incomes
@@ -359,13 +360,14 @@ class Person(object):
                            if receipt.fund_type == funds.FUND_TYPE_TFSA)
     nonreg_withdrawals = sum(receipt.amount for receipt in year_rec.withdrawals
                              if receipt.fund_type == funds.FUND_TYPE_NONREG)
-    savings = sum(receipt.amount for receipt in year_rec.deposits)
+    total_withdrawals = rrsp_withdrawals + tfsa_withdrawals + nonreg_withdrawals
     rrsp_deposits = sum(receipt.amount for receipt in year_rec.deposits
                         if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
     tfsa_deposits = sum(receipt.amount for receipt in year_rec.deposits
                         if receipt.fund_type == funds.FUND_TYPE_TFSA)
     nonreg_deposits = sum(receipt.amount for receipt in year_rec.deposits
                           if receipt.fund_type == funds.FUND_TYPE_NONREG)
+    savings = rrsp_deposits + tfsa_deposits + nonreg_deposits
     ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
 
     if gross_income < world.LICO_SINGLE_CITY_WP:
@@ -416,13 +418,12 @@ class Person(object):
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
       self.accumulators.benefits_gis.UpdateOneValue(gis)
 
-
     self.accumulators.period_earnings.UpdateOneValue(earnings, period)
     self.accumulators.period_cpp_benefits.UpdateOneValue(cpp, period)
     self.accumulators.period_oas_benefits.UpdateOneValue(oas, period)
     self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains, period)
     self.accumulators.period_gis_benefits.UpdateOneValue(gis, period)
-    self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.cpp_contribution + year_rec.ei_premium, period)
+    self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.total_social_benefit_repayment, period)
     self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals, period)
     self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals, period)
     self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals, period)
@@ -434,6 +435,13 @@ class Person(object):
     self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
     self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
     self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
+
+    self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
+    self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
+    self.accumulators.tax_contributions_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
+    self.accumulators.benefits_by_age.UpdateOneValue(ei_benefits+cpp+oas+gis, self.age)
+    self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
+    self.accumulators.withdrawals_by_age.UpdateOneValue(total_withdrawals, self.age)
 
     self.age += 1
     self.year += 1
