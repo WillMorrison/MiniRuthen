@@ -49,6 +49,13 @@ class Person(object):
     self.total_lifetime_withdrawals = 0
     self.total_working_savings = 0
 
+    self.positive_earnings_years = world.PRE_SIM_POSITIVE_EARNING_YEARS
+    self.positive_savings_years = 0
+    self.ei_years = 0
+    self.gis_years = 0
+    self.gross_income_below_lico_years = 0
+    self.no_assets_years = 0
+
   def OnRetirement(self):
     """This deals with events happening at the point of retirement."""
 
@@ -185,10 +192,12 @@ class Person(object):
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
     year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
     cpp_employee_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
+    year_rec.cpp_contribution = cpp_employee_contribution
 
     # EI premium
     year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE))
     ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
+    year_rec.ei_premium = ei_premium
 
     # Federal non-refundable tax credits
     if year_rec.is_dead:
@@ -283,13 +292,16 @@ class Person(object):
       deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
       cash -= deposited
       self.total_working_savings += deposited
+      if deposited > 0:
+        self.positive_savings_years += 1
 
     # Update funds
     for fund in self.funds.values():
       fund.Update(year_rec)
 
     # Pay income taxes
-    cash -= self.CalcIncomeTax(year_rec)
+    year_rec.taxes_payable = self.CalcIncomeTax(year_rec)
+    cash -= year_rec.taxes_payable
     
     # Update incomes
     for income in self.incomes:
@@ -311,6 +323,13 @@ class Person(object):
     assets = sum(fund.amount for fund in self.funds.values())
     gross_income = sum(receipt.amount for receipt in year_rec.incomes) + sum(receipt.amount for receipt in year_rec.withdrawals)
     ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
+
+    if gross_income < world.LICO_SINGLE_CITY_WP:
+      self.gross_income_below_lico_years += 1
+
+    if assets <= 0:
+      self.no_assets_years += 1
+
     if self.age >= world.MINIMUM_RETIREMENT_AGE and not self.retired:
       self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings)
 
@@ -328,15 +347,34 @@ class Person(object):
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(1)
       else:
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(0)
+      self.accumulators.retirement_taxes.UpdateOneValue(year_rec.taxes_payable)
+      cpp = sum(receipt.amount for receipt in year_rec.incomes
+                if receipt.income_type == incomes.INCOME_TYPE_CPP)
+      if cpp > 0:
+        self.accumulators.positive_cpp_benefits.UpdateOneValue(cpp)
     else:
       self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
+      self.accumulators.earnings_working.UpdateOneValue(earnings)
+      self.accumulators.working_annual_ei_cpp_deductions.UpdateOneValue(year_rec.cpp_contribution + year_rec.ei_premium)
+      self.accumulators.working_taxes.UpdateOneValue(year_rec.taxes_payable)
+      savings = sum(receipt.amount for receipt in year_rec.deposits)
+      if earnings > 0:
+        self.positive_earnings_years += 1
+        self.accumulators.fraction_earnings_saved.UpdateOneValue(savings/earnings)
+      ei_benefits =  sum(receipt.amount for receipt in year_rec.incomes
+                         if receipt.income_type == incomes.INCOME_TYPE_EI)
+      if ei_benefits > 0:
+        self.ei_years += 1
+        self.accumulators.positive_ei_benefits.UpdateOneValue(ei_benefits)
 
     if self.age >= world.MAXIMUM_RETIREMENT_AGE:
       gis = sum(receipt.amount for receipt in year_rec.incomes
                 if receipt.income_type == incomes.INCOME_TYPE_GIS)
       if gis > 0:
+        self.gis_years += 1
         self.has_received_gis = True
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(1)
+        self.accumulators.positive_gis_benefits.UpdateOneValue(gis)
       else:
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
       self.accumulators.benefits_gis.UpdateOneValue(gis)
@@ -362,6 +400,16 @@ class Person(object):
       self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
     self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(self.total_lifetime_withdrawals - self.total_working_savings)
     self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
+
+    self.accumulators.age_at_death.UpdateOneValue(self.age)
+    self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.retired and self.age < self.strategy.planned_retirement_age else 0)
+    self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
+    self.accumulators.years_worked_with_earnings.UpdateOneValue(self.positive_earnings_years)
+    self.accumulators.positive_savings_years.UpdateOneValue(self.positive_savings_years)
+    self.accumulators.years_receiving_ei.UpdateOneValue(self.ei_years)
+    self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
+    self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
+    self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
 
   def LiveLife(self):
     """Run through one lifetime"""

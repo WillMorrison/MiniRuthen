@@ -185,6 +185,7 @@ class KeyedAccumulator(object):
 
 class AccumulatorBundle(object):
   def __init__(self):
+    # Accumulators needed for fitness function
     self.lifetime_consumption_summary = SummaryStatsAccumulator()
     self.lifetime_consumption_hist = QuantileAccumulator()
     self.working_consumption_summary = SummaryStatsAccumulator()
@@ -193,7 +194,6 @@ class AccumulatorBundle(object):
     self.retired_consumption_hist = QuantileAccumulator()
     self.pre_disability_retired_consumption_summary = SummaryStatsAccumulator()
     self.discounted_lifetime_consumption_summary = SummaryStatsAccumulator()
-
     self.earnings_late_working_summary = SummaryStatsAccumulator()
     self.fraction_persons_ruined = SummaryStatsAccumulator()
     self.fraction_retirement_years_ruined = SummaryStatsAccumulator()
@@ -211,6 +211,26 @@ class AccumulatorBundle(object):
     self.lifetime_withdrawals_less_savings = SummaryStatsAccumulator()
     self.retirement_consumption_less_working_consumption = SummaryStatsAccumulator()
     self.distributable_estate = SummaryStatsAccumulator()
+
+    # Accumulators needed for summary table
+    self.age_at_death = SummaryStatsAccumulator()
+    self.years_worked_with_earnings = SummaryStatsAccumulator()
+    self.earnings_working = SummaryStatsAccumulator()
+    self.fraction_persons_involuntarily_retired = SummaryStatsAccumulator()
+    self.fraction_persons_dying_before_retiring = SummaryStatsAccumulator()
+    self.working_annual_ei_cpp_deductions = SummaryStatsAccumulator()
+    self.working_taxes = SummaryStatsAccumulator()
+    self.retirement_taxes = SummaryStatsAccumulator()
+    self.positive_savings_years = SummaryStatsAccumulator()
+    self.fraction_earnings_saved = SummaryStatsAccumulator()
+    self.years_receiving_ei = SummaryStatsAccumulator()
+    self.positive_ei_benefits = SummaryStatsAccumulator()
+    self.years_receiving_gis = SummaryStatsAccumulator()
+    self.positive_gis_benefits = SummaryStatsAccumulator()
+    self.positive_cpp_benefits = SummaryStatsAccumulator()
+    self.years_income_below_lico = SummaryStatsAccumulator()
+    self.years_with_no_assets = SummaryStatsAccumulator()
+    self.replacement_rate = SummaryStatsAccumulator()
     
   def UpdateConsumption(self, consumption, year, is_retired):
     discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)
