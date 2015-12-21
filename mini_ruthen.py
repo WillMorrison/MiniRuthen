@@ -144,6 +144,11 @@ def WritePeriodSpecificTable(accumulators, out):
   writer.writerow(GetRow("RRSP savings", accumulators.period_rrsp_savings))
   writer.writerow(GetRow("TFSA savings", accumulators.period_tfsa_savings))
   writer.writerow(GetRow("Nonregistered savings", accumulators.period_nonreg_savings))
+  writer.writerow(GetRow("Fund Growth", accumulators.period_fund_growth))
+  writer.writerow(GetRow("Gross Estate", accumulators.period_gross_estate))
+  writer.writerow(GetRow("Estate Taxes", accumulators.period_estate_taxes))
+  writer.writerow(GetRow("Executor and Funeral Cost", accumulators.period_executor_funeral_costs))
+  writer.writerow(GetRow("Distributable Estate", accumulators.period_distributable_estate))
 
 def WriteAgeSpecificTable(accumulators, group_size, out):
   def GetRow(age):

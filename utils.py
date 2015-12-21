@@ -261,11 +261,11 @@ class AccumulatorBundle(object):
     self.period_rrsp_savings = KeyedAccumulator(SummaryStatsAccumulator)
     self.period_tfsa_savings = KeyedAccumulator(SummaryStatsAccumulator)
     self.period_nonreg_savings = KeyedAccumulator(SummaryStatsAccumulator)
-    #self.period_withdrawals_reinvested = KeyedAccumulator(SummaryStatsAccumulator)
-    #self.period_fund_growth = KeyedAccumulator(SummaryStatsAccumulator)
-    #self.period_gross_estate = KeyedAccumulator(SummaryStatsAccumulator)
-    #self.period_estate_taxes = KeyedAccumulator(SummaryStatsAccumulator)
-    #self.period_distributable estate = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_fund_growth = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_gross_estate = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_estate_taxes = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_executor_funeral_costs = KeyedAccumulator(SummaryStatsAccumulator)
+    self.period_distributable_estate = KeyedAccumulator(SummaryStatsAccumulator)
 
     # Accumulators for age specific table
     self.persons_alive_by_age = KeyedAccumulator(SummaryStatsAccumulator)

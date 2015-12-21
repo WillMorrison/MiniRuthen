@@ -236,6 +236,7 @@ class Person(object):
 
     # Gross estate at death
     gross_estate = total_funds_amount + world.CPP_DEATH_BENEFIT
+    year_rec.gross_estate = gross_estate
 
     # Probate tax
     probate_below = world.PROBATE_RATE_BELOW * min(gross_estate, world.PROBATE_RATE_CHANGE_LEVEL)
@@ -245,12 +246,13 @@ class Person(object):
     income_taxes_payable = self.CalcIncomeTax(year_rec)
 
     net_estate_after_tax = max(0, gross_estate - (probate_below + probate_above + income_taxes_payable))
+    year_rec.estate_taxes = (probate_below + probate_above + income_taxes_payable)
     
     # Funeral and executor costs
-    funeral_and_executor_fee = world.EXECUTOR_COST_FRACTION * gross_estate + world.FUNERAL_COST
+    year_rec.funeral_and_executor_fee = world.EXECUTOR_COST_FRACTION * gross_estate + world.FUNERAL_COST
 
     # Final estate value
-    estate = max(0, net_estate_after_tax - funeral_and_executor_fee)
+    estate = max(0, net_estate_after_tax - year_rec.funeral_and_executor_fee)
     return estate
 
   def MeddleWithCash(self, year_rec):
@@ -335,7 +337,7 @@ class Person(object):
       return INVOLUNTARILY_RETIRED
     elif self.retired:
       return RETIRED
-    elif not year_rec.is_dead and year_rec.is_employed:
+    elif year_rec.is_dead or year_rec.is_employed:
       return EMPLOYED
     else:
       return UNEMPLOYED
@@ -440,6 +442,7 @@ class Person(object):
       self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
       self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
       self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
+      self.accumulators.period_fund_growth.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) / year_rec.growth_rate, period)
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
@@ -487,8 +490,14 @@ class Person(object):
       self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
       self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
       self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
+
       for period in self.period_years:
         self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
+      period = self.Period(year_rec)
+      self.accumulators.period_gross_estate.UpdateOneValue(year_rec.gross_estate, period)
+      self.accumulators.period_estate_taxes.UpdateOneValue(year_rec.estate_taxes, period)
+      self.accumulators.period_executor_funeral_costs.UpdateOneValue(year_rec.funeral_and_executor_fee, period)
+      self.accumulators.period_distributable_estate.UpdateOneValue(estate, period)
 
   def LiveLife(self):
     """Run through one lifetime"""
