@@ -1,0 +1,5 @@
+--consumption_median_lifetime=1.0
+--std_consumption_lifetime=-0.5
+--earnings_avg_late_working=-0.25
+--average_benefits_gis=-0.3
+--average_distributable_estate=0.02

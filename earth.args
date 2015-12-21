@@ -1,0 +1,6 @@
+--consumption_20pct_lifetime=1
+--std_consumption_lifetime=-0.2
+--fraction_retirement_years_ruined=-2000
+--fraction_retirement_years_below_twice_ympe=-2000
+--average_lico_gap_working=-1
+--average_lico_gap_retired=-1
