@@ -1,0 +1,3 @@
+[submodule "pyeasyga"]
+	path = pyeasyga
+	url = https://github.com/remiomosowon/pyeasyga.git
