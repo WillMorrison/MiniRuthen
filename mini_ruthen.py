@@ -5,6 +5,9 @@ import csv
 import multiprocessing
 import os
 import sys
+import random
+
+from pyeasyga.pyeasyga import pyeasyga
 
 import person
 import utils
@@ -24,8 +27,11 @@ def RunPopulationWorker(strategy, gender, n, basic):
 
   return accumulators
 
-def RunPopulation(strategy, gender, n, basic):
+def RunPopulation(strategy, gender, n, basic, use_multiprocessing):
   """Runs population multithreaded"""
+  if not use_multiprocessing:
+    return RunPopulationWorker(strategy, gender, n, basic)
+
   # Initialize accumulators for calculation of fitness function
   accumulators = utils.AccumulatorBundle(basic_only=basic)
 
@@ -40,6 +46,68 @@ def RunPopulation(strategy, gender, n, basic):
     accumulators.Merge(sub_accumulator)
 
   return accumulators
+
+
+def ValidateStrategy(strategy):
+  return person.Strategy(
+      planned_retirement_age=int(min(max(60, strategy.planned_retirement_age), 65)),
+      savings_threshold=min(max(0, strategy.savings_threshold), 1000000),
+      savings_rate=min(max(0, strategy.savings_rate), 0.5),
+      savings_rrsp_fraction=min(max(0, strategy.savings_rrsp_fraction), 1),
+      savings_tfsa_fraction=min(max(0, strategy.savings_tfsa_fraction), 1),
+      lico_target_fraction=min(max(0, strategy.lico_target_fraction), 5),
+      working_period_drawdown_tfsa_fraction=min(max(0, strategy.working_period_drawdown_tfsa_fraction), 1),
+      working_period_drawdown_nonreg_fraction=min(max(0, strategy.working_period_drawdown_nonreg_fraction), 1),
+      oas_bridging_fraction=min(max(0, strategy.oas_bridging_fraction), 5),
+      drawdown_ced_fraction=min(max(0, strategy.drawdown_ced_fraction), 1),
+      initial_cd_fraction=min(max(0, strategy.initial_cd_fraction), 1),
+      drawdown_preferred_rrsp_fraction=min(max(0, strategy.drawdown_preferred_rrsp_fraction), 1),
+      drawdown_preferred_tfsa_fraction=min(max(0, strategy.drawdown_preferred_tfsa_fraction), 1),
+      reinvestment_preference_tfsa_fraction=min(max(0, strategy.reinvestment_preference_tfsa_fraction), 1),
+  )
+
+def Optimize(gender, n, weights, population_size, max_generations, use_multiprocessing):
+
+  def individual_to_strategy(individual):
+    return ValidateStrategy(person.Strategy(
+        planned_retirement_age=60+5*individual[0],
+        savings_threshold=1000000*individual[1],
+        savings_rate=0.5*individual[2],
+        savings_rrsp_fraction=individual[3],
+        savings_tfsa_fraction=individual[4],
+        lico_target_fraction=5*individual[5],
+        working_period_drawdown_tfsa_fraction=individual[6],
+        working_period_drawdown_nonreg_fraction=individual[7],
+        oas_bridging_fraction=5*individual[8],
+        drawdown_ced_fraction=individual[9],
+        initial_cd_fraction=individual[10],
+        drawdown_preferred_rrsp_fraction=individual[11],
+        drawdown_preferred_tfsa_fraction=individual[12],
+        reinvestment_preference_tfsa_fraction=individual[13],
+        ))
+  
+  ga = pyeasyga.GeneticAlgorithm(weights, population_size=population_size, generations=max_generations, elitism=True, maximise_fitness=True)
+
+  def create_individual(data):
+    return [random.random() for _ in range(14)]
+  ga.create_individual = create_individual
+
+  def mutate(individual):
+    individual[random.randrange(len(individual))] = random.random()
+  ga.mutate = mutate
+
+  def fitness_function(individual, weights):
+    strategy = individual_to_strategy(individual)
+    accumulators = RunPopulation(strategy, gender, n, True, use_multiprocessing)
+    return sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))
+  ga.fitness_function = fitness_function
+
+  ga.run()
+
+  fitness, best_individual = ga.best_individual()
+  # print("Best Individual: %s, Fitness: %f" % (best_individual, fitness))
+  return individual_to_strategy(best_individual)
+
 
 FitnessFunctionCompositionRow = collections.namedtuple("FitnessFunctionCompositionRow", ["name", "value", "stderr", "weight", "contribution"])
 
@@ -252,6 +320,11 @@ if __name__ == '__main__':
   parser.add_argument("--consumption_avg_retirement_below_fraction_avg_working", help="fitness component weight", type=float, default=0)
   parser.add_argument("--average_distributable_estate", help="fitness component weight", type=float, default=0)
 
+  # Genetic algorithm parameters
+  parser.add_argument("--optimize", help="Run the optimizer", action='store_true', default=False)
+  parser.add_argument("--max_generations", help="Maximum genetic algorithm generations", type=int, default=100)
+  parser.add_argument("--population_size", help="Individuals in the genetic algorithm's population", type=int, default=50)
+
   args = parser.parse_args()
 
   strategy = person.Strategy(
@@ -304,11 +377,11 @@ if __name__ == '__main__':
     "AverageDistributableEstate": args.average_distributable_estate,
   }
 
+  if args.optimize:
+    strategy = Optimize(args.gender, args.number, weights, args.population_size, args.max_generations, not args.disable_multiprocessing)
+
   # Run lives
-  if args.disable_multiprocessing:
-    accumulators = RunPopulationWorker(strategy, args.gender, args.number, args.basic_run)
-  else:
-    accumulators = RunPopulation(strategy, args.gender, args.number, args.basic_run)
+  accumulators = RunPopulation(strategy, args.gender, args.number, args.basic_run, not args.disable_multiprocessing)
 
   # Output reports
   if not args.basic_run:
