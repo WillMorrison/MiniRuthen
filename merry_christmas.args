@@ -1,0 +1,14 @@
+--consumption_avg_lifetime=1.0
+--consumption_discounted_lifetime=0.2
+--consumption_10pct_lifetime=0.3
+--std_consumption_lifetime=-0.3
+--std_consumption_retired=-0.4
+--earnings_avg_late_working=-0.2
+--fraction_retirement_years_below_twice_ympe=-4000
+--average_lico_gap_working=-0.2
+--average_lico_gap_retired=-0.3
+--consumption_avg_retirement_below_fraction_avg_working=0.25
+--average_distributable_estate=0.05
+--optimize
+--population_size=25
+--max_generations=50

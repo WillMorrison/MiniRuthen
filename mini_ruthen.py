@@ -49,6 +49,7 @@ def RunPopulation(strategy, gender, n, basic, use_multiprocessing):
 
 
 def ValidateStrategy(strategy):
+  """Do bounds checking on a strategy and clip anything outside the valid range"""
   return person.Strategy(
       planned_retirement_age=int(min(max(60, strategy.planned_retirement_age), 65)),
       savings_threshold=min(max(0, strategy.savings_threshold), 1000000),
@@ -67,6 +68,7 @@ def ValidateStrategy(strategy):
   )
 
 def Optimize(gender, n, weights, population_size, max_generations, use_multiprocessing):
+  """Run a genetic algorithm to optimize a strategy based on fitness function weights"""
 
   def individual_to_strategy(individual):
     return ValidateStrategy(person.Strategy(
@@ -105,7 +107,6 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
   ga.run()
 
   fitness, best_individual = ga.best_individual()
-  # print("Best Individual: %s, Fitness: %f" % (best_individual, fitness))
   return individual_to_strategy(best_individual)
 
 
@@ -327,7 +328,7 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  strategy = person.Strategy(
+  strategy = ValidateStrategy(person.Strategy(
       planned_retirement_age=args.planned_retirement_age,
       savings_threshold=args.savings_threshold,
       savings_rate=args.savings_rate,
@@ -341,7 +342,7 @@ if __name__ == '__main__':
       initial_cd_fraction=args.initial_cd_fraction,
       drawdown_preferred_rrsp_fraction=args.drawdown_preferred_rrsp_fraction,
       drawdown_preferred_tfsa_fraction=args.drawdown_preferred_tfsa_fraction,
-      reinvestment_preference_tfsa_fraction=args.reinvestment_preference_tfsa_fraction)
+      reinvestment_preference_tfsa_fraction=args.reinvestment_preference_tfsa_fraction))
   
   weights = {
     "ConsumptionAvgLifetime": args.consumption_avg_lifetime,
