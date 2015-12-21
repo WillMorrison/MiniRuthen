@@ -240,7 +240,6 @@ class AccumulatorBundle(object):
     self.positive_cpp_benefits = SummaryStatsAccumulator()
     self.years_income_below_lico = SummaryStatsAccumulator()
     self.years_with_no_assets = SummaryStatsAccumulator()
-    self.replacement_rate = SummaryStatsAccumulator()
 
     # Accumulators for period specific tables
     self.period_years = KeyedAccumulator(SummaryStatsAccumulator)
@@ -272,11 +271,17 @@ class AccumulatorBundle(object):
     self.persons_alive_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.gross_earnings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.income_tax_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.sales_tax_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.ei_premium_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.cpp_contributions_by_age = KeyedAccumulator(SummaryStatsAccumulator)
-    self.benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.ei_benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.cpp_benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.oas_benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.gis_benefits_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.savings_by_age = KeyedAccumulator(SummaryStatsAccumulator)
-    self.withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.rrsp_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.tfsa_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.nonreg_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.consumption_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     
   def UpdateConsumption(self, consumption, year, is_retired, period):

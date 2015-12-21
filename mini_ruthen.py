@@ -110,7 +110,7 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, out):
   writer.writerow(("Average Positive CPP Benefits Level", accumulators.positive_cpp_benefits.mean))
   writer.writerow(("Average Years Gross Income Below LICO", accumulators.years_income_below_lico.mean))
   writer.writerow(("Average Years with No Financial Assets at BoY", accumulators.years_with_no_assets.mean))
-  #writer.writerow(("Replacement Rate (Consumption Basis)", accumulators.replacement_rate.mean))
+  writer.writerow(("Replacement Rate (Consumption Basis)", accumulators.period_consumption.Query([person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean / accumulators.period_consumption.Query([person.EMPLOYED, person.UNEMPLOYED]).mean))
 
 def WritePeriodSpecificTable(accumulators, out):
   def GetRow(name, accumulator):
@@ -153,14 +153,20 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
             accumulators.income_tax_by_age.Query([age]).mean,
             accumulators.ei_premium_by_age.Query([age]).mean,
             accumulators.cpp_contributions_by_age.Query([age]).mean,
-            accumulators.benefits_by_age.Query([age]).mean,
+            accumulators.sales_tax_by_age.Query([age]).mean,
+            accumulators.ei_benefits_by_age.Query([age]).mean,
+            accumulators.cpp_benefits_by_age.Query([age]).mean,
+            accumulators.oas_benefits_by_age.Query([age]).mean,
+            accumulators.gis_benefits_by_age.Query([age]).mean,
             accumulators.savings_by_age.Query([age]).mean,
-            accumulators.withdrawals_by_age.Query([age]).mean,
+            accumulators.rrsp_withdrawals_by_age.Query([age]).mean,
+            accumulators.tfsa_withdrawals_by_age.Query([age]).mean,
+            accumulators.nonreg_withdrawals_by_age.Query([age]).mean,
             accumulators.consumption_by_age.Query([age]).mean,
             ]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "EI, CPP, OAS, GIS Benefits", "Total Savings", "Total Withdrawals", "Consumption"))
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "TFSA Withdrawals", "Non Registered Withdrawals", "Consumption"))
   for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
     writer.writerow(GetRow(age))
 

@@ -91,6 +91,9 @@ class Person(object):
 
     self.assets_at_retirement = sum(fund.amount for fund in self.funds.values())
 
+    if not self.basic_only:
+      self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.age < self.strategy.planned_retirement_age else 0)
+
 
   def AnnualSetup(self):
     """This is responsible for beginning of year operations.
@@ -441,11 +444,17 @@ class Person(object):
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
       self.accumulators.income_tax_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
+      self.accumulators.sales_tax_by_age.UpdateOneValue(year_rec.sales_taxes, self.age)
       self.accumulators.ei_premium_by_age.UpdateOneValue(year_rec.ei_premium, self.age)
       self.accumulators.cpp_contributions_by_age.UpdateOneValue(year_rec.cpp_contribution, self.age)
-      self.accumulators.benefits_by_age.UpdateOneValue(ei_benefits+cpp+oas+gis, self.age)
+      self.accumulators.ei_benefits_by_age.UpdateOneValue(ei_benefits, self.age)
+      self.accumulators.cpp_benefits_by_age.UpdateOneValue(cpp, self.age)
+      self.accumulators.oas_benefits_by_age.UpdateOneValue(oas, self.age)
+      self.accumulators.gis_benefits_by_age.UpdateOneValue(gis, self.age)
       self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
-      self.accumulators.withdrawals_by_age.UpdateOneValue(total_withdrawals, self.age)
+      self.accumulators.rrsp_withdrawals_by_age.UpdateOneValue(rrsp_withdrawals, self.age)
+      self.accumulators.tfsa_withdrawals_by_age.UpdateOneValue(tfsa_withdrawals, self.age)
+      self.accumulators.nonreg_withdrawals_by_age.UpdateOneValue(nonreg_withdrawals, self.age)
 
     self.age += 1
     self.year += 1
@@ -471,9 +480,8 @@ class Person(object):
 
     if not self.basic_only:
       self.accumulators.age_at_death.UpdateOneValue(self.age)
-      self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.retired and self.age < self.strategy.planned_retirement_age else 0)
-      self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
       self.accumulators.years_worked_with_earnings.UpdateOneValue(self.positive_earnings_years)
+      self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
       self.accumulators.positive_savings_years.UpdateOneValue(self.positive_savings_years)
       self.accumulators.years_receiving_ei.UpdateOneValue(self.ei_years)
       self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
