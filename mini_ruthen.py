@@ -39,11 +39,8 @@ def RunPopulation(strategy, gender, n, basic, use_multiprocessing):
   args = [(strategy, gender, n//os.cpu_count(), basic) for _ in range(os.cpu_count()-1)]
   args.append((strategy, gender, n - n//os.cpu_count() * (os.cpu_count()-1), basic))
   with multiprocessing.Pool() as pool:
-    sub_accumulators = pool.starmap(RunPopulationWorker, args)
-
-  # Merge in the results to our accumulators
-  for sub_accumulator in sub_accumulators:
-    accumulators.Merge(sub_accumulator)
+    for result in [pool.apply_async(RunPopulationWorker, arg) for arg in args]:
+      accumulators.Merge(result.get())
 
   return accumulators
 
