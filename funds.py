@@ -184,7 +184,7 @@ def ChainedTransaction(amount, funds, withdrawal_proportions,
   total_realized_gains = 0
 
   for fund, withdrawal_proportion, deposit_proportion in zip(funds, withdrawal_proportions, deposit_proportions):
-    if total_withdrawn < amount:
+    if total_withdrawn <= amount:
       to_withdraw = (amount - total_withdrawn) * withdrawal_proportion
       withdrawn, realized_gains, year_rec = fund.Withdraw(to_withdraw,
                                                           year_rec)
@@ -194,8 +194,6 @@ def ChainedTransaction(amount, funds, withdrawal_proportions,
       to_deposit = (total_withdrawn - amount) * deposit_proportion
       deposited, year_rec = fund.Deposit(to_deposit, year_rec)
       total_withdrawn -= deposited
-    else:
-      break
   return (total_withdrawn, total_realized_gains, year_rec)
 
 def SplitFund(source, sink, amount):

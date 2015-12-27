@@ -575,6 +575,34 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(tfsa.amount, 25)
     self.assertEqual(nonreg.amount, 5)
 
+  def testChainedWithdrawForcedWithdrawPreferZero(self):
+    year_rec = utils.YearRecord()
+    year_rec.age = 94
+    year_rec.growth_rate=0
+    rrsp = funds.RRSP()
+    rrsp.amount = 50
+    rrsp.Update(year_rec)
+    tfsa = funds.TFSA()
+    tfsa.amount = 50
+    nonreg = funds.NonRegistered()
+    nonreg.amount = 30
+    nonreg.unrealized_gains = 15
+    fund_chain = (rrsp, tfsa, nonreg)
+    proportions = (0, 0.5, 1)
+    withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
+                                                       proportions,
+                                                       utils.YearRecord())
+    self.assertEqual(withdrawn, 60)
+    self.assertEqual(gains, 12.5)
+    self.assertSequenceEqual(
+        year_rec.withdrawals, 
+        [funds.WithdrawReceipt(10, 0, funds.FUND_TYPE_RRSP),
+         funds.WithdrawReceipt(25, 0, funds.FUND_TYPE_TFSA),
+         funds.WithdrawReceipt(25, 12.5, funds.FUND_TYPE_NONREG)])
+    self.assertEqual(rrsp.amount, 40)
+    self.assertEqual(tfsa.amount, 25)
+    self.assertEqual(nonreg.amount, 5)
+
   def testChainedWithdrawForcedWithdrawProportionalDeposit(self):
     year_rec = utils.YearRecord()
     rrsp = funds.RRSP()
@@ -625,6 +653,26 @@ class ChainingTest(unittest.TestCase):
         year_rec.deposits, [funds.DepositReceipt(0, funds.FUND_TYPE_TFSA)])
     self.assertEqual(rrsp.amount, 20)
     self.assertEqual(tfsa.amount, 50)
+
+  def testChainedWithdrawForcedWithdrawWantZero(self):
+    rrsp = funds.RRSP()
+    rrsp.amount = 100
+    rrsp.forced_withdraw = 20
+    nonreg = funds.NonRegistered()
+    fund_chain = (rrsp, nonreg)
+    proportions = (0, 1)
+    withdrawn, gains, year_rec = funds.ChainedWithdraw(0, fund_chain,
+                                                       proportions,
+                                                       utils.YearRecord())
+    self.assertEqual(withdrawn, 0)
+    self.assertEqual(gains, 0)
+    self.assertSequenceEqual(
+        year_rec.withdrawals,
+        [funds.WithdrawReceipt(20, 0, funds.FUND_TYPE_RRSP)])
+    self.assertSequenceEqual(
+        year_rec.deposits, [funds.DepositReceipt(20, funds.FUND_TYPE_NONREG)])
+    self.assertEqual(rrsp.amount, 80)
+    self.assertEqual(nonreg.amount, 20)
 
   def testChainedTransactionDifferentProportion(self):
     year_rec = utils.YearRecord()
