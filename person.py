@@ -73,7 +73,7 @@ class Person(object):
 
     # Create RRSP bridging fund if needed
     if self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
-      requested = (world.CPP_EXPECTED_RETIREMENT_AGE - self.age) * world.OAS_BENEFIT
+      requested = (world.CPP_EXPECTED_RETIREMENT_AGE - self.age) * world.OAS_BENEFIT * self.strategy.oas_bridging_fraction
       self.funds["wp_rrsp"], self.funds["bridging"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSPBridging(), requested)
       self.bridging_annual_withdrawal = self.funds["bridging"].amount / (world.CPP_EXPECTED_RETIREMENT_AGE - self.age)
 
