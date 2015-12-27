@@ -92,7 +92,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
   ga.create_individual = create_individual
 
   def mutate(individual):
-    individual[random.randrange(len(individual))] = random.random()
+    individual[random.randrange(len(individual))] += random.gauss(0, 0.1)
   ga.mutate = mutate
 
   def fitness_function(individual, weights):
