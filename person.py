@@ -458,6 +458,10 @@ class Person(object):
       self.accumulators.rrsp_withdrawals_by_age.UpdateOneValue(rrsp_withdrawals, self.age)
       self.accumulators.tfsa_withdrawals_by_age.UpdateOneValue(tfsa_withdrawals, self.age)
       self.accumulators.nonreg_withdrawals_by_age.UpdateOneValue(nonreg_withdrawals, self.age)
+      self.accumulators.rrsp_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_RRSP), self.age)
+      self.accumulators.bridging_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_BRIDGING), self.age)
+      self.accumulators.tfsa_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_TFSA), self.age)
+      self.accumulators.nonreg_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_NONREG), self.age)
 
     self.age += 1
     self.year += 1

@@ -231,13 +231,17 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
             accumulators.gis_benefits_by_age.Query([age]).mean,
             accumulators.savings_by_age.Query([age]).mean,
             accumulators.rrsp_withdrawals_by_age.Query([age]).mean,
+            accumulators.rrsp_assets_by_age.Query([age]).mean,
+            accumulators.bridging_assets_by_age.Query([age]).mean,
             accumulators.tfsa_withdrawals_by_age.Query([age]).mean,
+            accumulators.tfsa_assets_by_age.Query([age]).mean,
             accumulators.nonreg_withdrawals_by_age.Query([age]).mean,
+            accumulators.nonreg_assets_by_age.Query([age]).mean,
             accumulators.consumption_by_age.Query([age]).mean,
             ]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "TFSA Withdrawals", "Non Registered Withdrawals", "Consumption"))
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "RRSP Assets", "Bridging Assets", "TFSA Withdrawals", "TFSA Assets", "Non Registered Withdrawals", "NonRegistered Assets", "Consumption"))
   for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
     writer.writerow(GetRow(age))
 

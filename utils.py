@@ -283,6 +283,10 @@ class AccumulatorBundle(object):
     self.tfsa_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.nonreg_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.consumption_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.rrsp_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.bridging_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.tfsa_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.nonreg_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     
   def UpdateConsumption(self, consumption, year, is_retired, period):
     discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)
