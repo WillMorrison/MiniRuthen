@@ -81,6 +81,7 @@ class Person(object):
         withdrawn, _, year_rec = funds.ChainedWithdraw(top_up_amount, fund_chain, (1, 1), year_rec)
         self.funds["bridging"].amount += withdrawn
         year_rec.deposits.append(funds.DepositReceipt(withdrawn, funds.FUND_TYPE_RRSP))
+        self.rrsp_room -= withdrawn
 
       self.bridging_annual_withdrawal = self.funds["bridging"].amount / (world.CPP_EXPECTED_RETIREMENT_AGE - self.age)
 

@@ -196,8 +196,11 @@ class PersonTest(unittest.TestCase):
 
     self.assertIn("bridging", j_canuck.funds)
     self.assertEqual(j_canuck.funds["bridging"].amount, 5 * world.OAS_BENEFIT)
+    self.assertIn(funds.WithdrawReceipt(2 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_NONREG), year_rec.withdrawals)
+    self.assertIn(funds.WithdrawReceipt(3 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_TFSA), year_rec.withdrawals)
+    self.assertAlmostEqual(j_canuck.rrsp_room, world.OAS_BENEFIT)
 
-  def testOnRetirementBridgingFundNoRRSPNoRoom(self):
+  def testOnRetirementBridgingFundRRSPRoomLimit(self):
     strategy = self.default_strategy._replace(planned_retirement_age=60)
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 60
@@ -210,6 +213,8 @@ class PersonTest(unittest.TestCase):
 
     self.assertIn("bridging", j_canuck.funds)
     self.assertEqual(j_canuck.funds["bridging"].amount, 1.5 * world.OAS_BENEFIT)
+    self.assertIn(funds.WithdrawReceipt(0.5 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_NONREG), year_rec.withdrawals)
+    self.assertEqual(j_canuck.rrsp_room, 0)
 
   def testOnRetirementFundSplitting(self):
     strategy = self.default_strategy._replace(drawdown_ced_fraction=0.8,
