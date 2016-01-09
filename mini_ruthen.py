@@ -84,8 +84,20 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
         drawdown_preferred_tfsa_fraction=individual[12],
         reinvestment_preference_tfsa_fraction=individual[13],
         ))
-  
-  ga = pyeasyga.GeneticAlgorithm(weights, population_size=population_size, generations=max_generations, elitism=True, maximise_fitness=True)
+ 
+  class MyGeneticAlgorithm(pyeasyga.GeneticAlgorithm):
+
+    def run(self):
+      """Run (solve) the Genetic Algorithm. Also a hack to output a csv table of generation fitness values as it goes."""
+      self.create_first_generation()
+
+      print("Generation,Fitness")
+      for i in range(0, self.generations):
+        print("%s,%s" % (i,self.best_individual()[0]))
+        self.create_next_generation()
+      print("%s,%s\n" % (self.generations, self.best_individual()[0]))
+      
+  ga = MyGeneticAlgorithm(weights, population_size=population_size, generations=max_generations, elitism=True, maximise_fitness=True)
 
   def create_individual(data):
     return [random.random() for _ in range(14)]
