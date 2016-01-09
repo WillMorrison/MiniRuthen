@@ -64,7 +64,7 @@ class Person(object):
 
     self.period_years = {EMPLOYED: 0, UNEMPLOYED: 0, RETIRED: 0, INVOLUNTARILY_RETIRED: 0}
 
-  def OnRetirement(self):
+  def OnRetirement(self, year_rec):
     """This deals with events happening at the point of retirement."""
 
     # Update all incomes
@@ -75,6 +75,13 @@ class Person(object):
     if self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
       requested = (world.CPP_EXPECTED_RETIREMENT_AGE - self.age) * world.OAS_BENEFIT * self.strategy.oas_bridging_fraction
       self.funds["wp_rrsp"], self.funds["bridging"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSPBridging(), requested)
+      if self.funds["bridging"].amount < requested:
+        top_up_amount = min(self.rrsp_room, requested - self.funds["bridging"].amount)
+        fund_chain = [self.funds["wp_nonreg"], self.funds["wp_tfsa"]]
+        withdrawn, _, year_rec = funds.ChainedWithdraw(top_up_amount, fund_chain, (1, 1), year_rec)
+        self.funds["bridging"].amount += withdrawn
+        year_rec.deposits.append(funds.DepositReceipt(withdrawn, funds.FUND_TYPE_RRSP))
+
       self.bridging_annual_withdrawal = self.funds["bridging"].amount / (world.CPP_EXPECTED_RETIREMENT_AGE - self.age)
 
     # Split each fund into a CED and a CD fund
@@ -121,7 +128,7 @@ class Person(object):
       if ((self.age == self.strategy.planned_retirement_age and self.age >= world.MINIMUM_RETIREMENT_AGE) or
           self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIREMENT_INCREMENT):
         self.retired = True
-        self.OnRetirement()
+        self.OnRetirement(year_rec)
     year_rec.is_retired = self.retired
 
     # Employment

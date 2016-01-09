@@ -175,11 +175,41 @@ class PersonTest(unittest.TestCase):
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 63
     j_canuck.funds["wp_rrsp"].amount = 5 * world.OAS_BENEFIT
+    year_rec = utils.YearRecord()
 
-    j_canuck.OnRetirement()
+    j_canuck.OnRetirement(year_rec)
 
     self.assertIn("bridging", j_canuck.funds)
     self.assertEqual(j_canuck.funds["bridging"].amount, 2 * world.OAS_BENEFIT)
+
+  def testOnRetirementBridgingFundNoRRSP(self):
+    strategy = self.default_strategy._replace(planned_retirement_age=60)
+    j_canuck = person.Person(strategy=strategy)
+    j_canuck.age = 60
+    j_canuck.funds["wp_rrsp"].amount = 0
+    j_canuck.funds["wp_nonreg"].amount = 2 * world.OAS_BENEFIT
+    j_canuck.funds["wp_tfsa"].amount = 4 * world.OAS_BENEFIT
+    j_canuck.rrsp_room = 6 * world.OAS_BENEFIT
+    year_rec = utils.YearRecord()
+
+    j_canuck.OnRetirement(year_rec)
+
+    self.assertIn("bridging", j_canuck.funds)
+    self.assertEqual(j_canuck.funds["bridging"].amount, 5 * world.OAS_BENEFIT)
+
+  def testOnRetirementBridgingFundNoRRSPNoRoom(self):
+    strategy = self.default_strategy._replace(planned_retirement_age=60)
+    j_canuck = person.Person(strategy=strategy)
+    j_canuck.age = 60
+    j_canuck.funds["wp_rrsp"].amount = world.OAS_BENEFIT
+    j_canuck.funds["wp_nonreg"].amount = 2 * world.OAS_BENEFIT
+    j_canuck.rrsp_room = 0.5 * world.OAS_BENEFIT
+    year_rec = utils.YearRecord()
+
+    j_canuck.OnRetirement(year_rec)
+
+    self.assertIn("bridging", j_canuck.funds)
+    self.assertEqual(j_canuck.funds["bridging"].amount, 1.5 * world.OAS_BENEFIT)
 
   def testOnRetirementFundSplitting(self):
     strategy = self.default_strategy._replace(drawdown_ced_fraction=0.8,
@@ -190,7 +220,7 @@ class PersonTest(unittest.TestCase):
     j_canuck.funds["wp_tfsa"].amount = 1000
     j_canuck.funds["wp_nonreg"].amount = 500
 
-    j_canuck.OnRetirement()
+    j_canuck.OnRetirement(utils.YearRecord())
 
     self.assertCountEqual(
         j_canuck.funds.keys(),
