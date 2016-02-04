@@ -240,6 +240,7 @@ class AccumulatorBundle(object):
     self.positive_cpp_benefits = SummaryStatsAccumulator()
     self.years_income_below_lico = SummaryStatsAccumulator()
     self.years_with_no_assets = SummaryStatsAccumulator()
+    self.years_with_negative_consumption = SummaryStatsAccumulator()
 
     # Accumulators for period specific tables
     self.period_years = KeyedAccumulator(SummaryStatsAccumulator)
@@ -295,6 +296,7 @@ class AccumulatorBundle(object):
     self.lifetime_consumption_summary.UpdateOneValue(consumption)
     self.lifetime_consumption_hist.UpdateOneValue(consumption)
     self.discounted_lifetime_consumption_summary.UpdateOneValue(discounted_consumption)
+    self.years_with_negative_consumption.UpdateOneValue(1 if consumption < 0 else 0)
     if is_retired:
       self.retired_consumption_summary.UpdateOneValue(consumption)
       self.retired_consumption_hist.UpdateOneValue(consumption)

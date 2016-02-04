@@ -107,6 +107,16 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
     individual[random.randrange(len(individual))] += random.gauss(0, 0.1)
   ga.mutate = mutate
 
+  def crossover(parent1, parent2):
+    children = []
+    for gene_pair in zip(parent2, parent2):
+      if random.randint(0, 1):
+        children.append(gene_pair)
+      else:
+        children.append(reversed(gene_pair))
+    child1, child2 = zip(*children)
+    return child1, child2
+
   def fitness_function(individual, weights):
     strategy = individual_to_strategy(individual)
     accumulators = RunPopulation(strategy, gender, n, True, use_multiprocessing)
@@ -162,14 +172,16 @@ def WriteFitnessFunctionCompositionTable(rows, out):
   for row in rows:
     writer.writerow(row)
 
-def WriteSummaryTable(gender, group_size, accumulators, weights, out):
+def WriteSummaryTable(gender, group_size, accumulators, weights, population_size, max_generations, out):
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("name", "value"))
+  writer.writerow(("measure", "value"))
+  writer.writerow(("Population Size", population_size))
+  writer.writerow(("Max Generations", max_generations))
+  writer.writerow(("Group Size", group_size))
+  writer.writerow(("Fitness Function Value", sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))))
   writer.writerow(("Gender", gender))
   writer.writerow(("Start Age", world.START_AGE))
-  writer.writerow(("Group Size", group_size))
   writer.writerow(("Real Return on Investments", world.MEAN_INVESTMENT_RETURN))
-  writer.writerow(("Fitness Function Value", sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))))
   writer.writerow(("Age at Death", accumulators.age_at_death.mean))
   writer.writerow(("Average Years Worked", accumulators.years_worked_with_earnings.mean))
   writer.writerow(("Average Earnings Per Year Worked", accumulators.earnings_working.mean))
@@ -189,6 +201,8 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, out):
   writer.writerow(("Average Years Gross Income Below LICO", accumulators.years_income_below_lico.mean))
   writer.writerow(("Average Years with No Financial Assets at BoY", accumulators.years_with_no_assets.mean))
   writer.writerow(("Replacement Rate (Consumption Basis)", accumulators.period_consumption.Query([person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean / accumulators.period_consumption.Query([person.EMPLOYED, person.UNEMPLOYED]).mean))
+  writer.writerow(("Distributable Estate", accumulators.period_distributable_estate.Query([person.EMPLOYED, person.UNEMPLOYED, person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean))
+  writer.writerow(("Average Years With Negative Consumption", accumulators.years_with_negative_consumption.mean))
 
 def WritePeriodSpecificTable(accumulators, out):
   def GetRow(name, accumulator):
@@ -399,7 +413,7 @@ if __name__ == '__main__':
 
   # Output reports
   if not args.basic_run:
-    WriteSummaryTable(args.gender, args.number, accumulators, weights, sys.stdout)
+    WriteSummaryTable(args.gender, args.number, accumulators, weights, args.population_size if args.optimize else 1, args.max_generations if args.optimize else 1, sys.stdout, )
     sys.stdout.write('\n')
   WriteStrategyTable(strategy, sys.stdout)
   sys.stdout.write('\n')
