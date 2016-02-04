@@ -450,7 +450,7 @@ class Person(object):
       self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
       self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
       self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
-      self.accumulators.period_fund_growth.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) / year_rec.growth_rate, period)
+      self.accumulators.period_fund_growth.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) * year_rec.growth_rate, period)
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
