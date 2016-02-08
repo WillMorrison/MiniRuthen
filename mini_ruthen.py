@@ -6,6 +6,7 @@ import multiprocessing
 import os
 import sys
 import random
+import math
 
 from pyeasyga.pyeasyga import pyeasyga
 
@@ -91,11 +92,23 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
       """Run (solve) the Genetic Algorithm. Also a hack to output a csv table of generation fitness values as it goes."""
       self.create_first_generation()
 
-      print("Generation,Fitness")
+      def OutputRow(i):
+        mean = sum(individual.fitness for individual in self.current_generation)/len(self.current_generation)
+        stdev = math.sqrt(sum((individual.fitness - mean)**2 for individual in self.current_generation)/len(self.current_generation))
+        row = [
+          i,
+          self.best_individual()[0],
+          mean,
+          stdev,
+          hash(tuple(self.best_individual()[1]))
+          ]
+        return ",".join(str(e) for e in row)
+
+      print("Generation,Best Fitness,Fitness Mean,Fitness Stddev,Best Individual ID")
       for i in range(0, self.generations):
-        print("%s,%s" % (i,self.best_individual()[0]))
+        print("%s\n" % OutputRow(i))
         self.create_next_generation()
-      print("%s,%s\n" % (self.generations, self.best_individual()[0]))
+      print("%s\n" % OutputRow(self.generations))
       
   ga = MyGeneticAlgorithm(weights, population_size=population_size, generations=max_generations, elitism=True, maximise_fitness=True)
 

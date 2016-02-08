@@ -11,7 +11,7 @@ args = parser.parse_args()
 t = []
 for f in args.files:
   header = next(f)
-  if header != "Generation,Fitness\n":
+  if header != "Generation,Best Fitness,Fitness Mean,Fitness Stddev,Best Individual ID\n":
     logging.warning("%s does not appear to contain fitness values", f.name)
     continue
 
@@ -21,8 +21,8 @@ for f in args.files:
     if not line:
       break
 
-    generation, fitness = line.split(',')
-    col.append(fitness)
+    row = line.split(',')
+    col.append(row[1])
   t.append(col)
 
 w = csv.writer(sys.stdout)
