@@ -106,7 +106,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
 
       print("Generation,Best Fitness,Fitness Mean,Fitness Stddev,Best Individual ID")
       for i in range(0, self.generations):
-        print("%s\n" % OutputRow(i))
+        print("%s" % OutputRow(i))
         self.create_next_generation()
       print("%s\n" % OutputRow(self.generations))
       
@@ -142,7 +142,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
   return individual_to_strategy(best_individual)
 
 
-FitnessFunctionCompositionRow = collections.namedtuple("FitnessFunctionCompositionRow", ["name", "value", "stderr", "weight", "contribution"])
+FitnessFunctionCompositionRow = collections.namedtuple("FitnessFunctionCompositionRow", ["component", "value", "stderr", "weight", "contribution"])
 
 def GetFitnessFunctionCompositionTableRows(accumulators, weights):
   return [
@@ -227,7 +227,7 @@ def WritePeriodSpecificTable(accumulators, out):
             accumulator.Query([person.INVOLUNTARILY_RETIRED]).mean]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("name", "lifetime", "employed", "unemployed", "planned retirement", "unplanned retirement"))
+  writer.writerow(("measure", "lifetime", "employed", "unemployed", "planned retirement", "unplanned retirement"))
   years_row = GetRow("Simulated years", accumulators.period_years)
   years_row[1] = None
   writer.writerow(years_row)
