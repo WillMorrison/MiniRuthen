@@ -14,6 +14,53 @@ import person
 import utils
 import world
 
+StrategyBounds = collections.namedtuple("StrategyBounds",
+                                        ["planned_retirement_age_min",
+                                         "planned_retirement_age_max",
+                                         "savings_threshold_min",
+                                         "savings_threshold_max",
+                                         "savings_rate_min",
+                                         "savings_rate_max",
+                                         "savings_rrsp_fraction_min",
+                                         "savings_rrsp_fraction_max",
+                                         "savings_tfsa_fraction_min",
+                                         "savings_tfsa_fraction_max",
+                                         "lico_target_fraction_min",
+                                         "lico_target_fraction_max",
+                                         "working_period_drawdown_tfsa_fraction_min",
+                                         "working_period_drawdown_tfsa_fraction_max",
+                                         "working_period_drawdown_nonreg_fraction_min",
+                                         "working_period_drawdown_nonreg_fraction_max",
+                                         "oas_bridging_fraction_min",
+                                         "oas_bridging_fraction_max",
+                                         "drawdown_ced_fraction_min",
+                                         "drawdown_ced_fraction_max",
+                                         "initial_cd_fraction_min",
+                                         "initial_cd_fraction_max",
+                                         "drawdown_preferred_rrsp_fraction_min",
+                                         "drawdown_preferred_rrsp_fraction_max",
+                                         "drawdown_preferred_tfsa_fraction_min",
+                                         "drawdown_preferred_tfsa_fraction_max",
+                                         "reinvestment_preference_tfsa_fraction_min",
+                                         "reinvestment_preference_tfsa_fraction_max",])
+
+DEFAULT_STRATEGY_BOUNDS = StrategyBounds(
+    60, 65,  # planned_retirement_age
+    0, 1000000,  # savings_threshold
+    0, 0.5,  # savings_rate
+    0, 1,  # savings_rrsp_fraction
+    0, 1,  # savings_tfsa_fraction
+    0, 5,  # lico_target_fraction
+    0, 1,  # working_period_drawdown_tfsa_fraction
+    0, 1,  # working_period_drawdown_nonreg_fraction
+    0, 5,  # oas_bridging_fraction
+    0, 1,  # drawdown_ced_fraction
+    0, 1,  # initial_cd_fraction
+    0, 1,  # drawdown_preferred_rrsp_fraction
+    0, 1,  # drawdown_preferred_tfsa_fraction
+    0, 1,  # reinvestment_preference_tfsa_fraction
+    )
+
 def RunPopulationWorker(strategy, gender, n, basic):
   # Initialize accumulators
   accumulators = utils.AccumulatorBundle(basic_only=basic)
@@ -46,45 +93,46 @@ def RunPopulation(strategy, gender, n, basic, use_multiprocessing):
   return accumulators
 
 
-def ValidateStrategy(strategy):
+def ValidateStrategy(strategy, bounds=DEFAULT_STRATEGY_BOUNDS):
   """Do bounds checking on a strategy and clip anything outside the valid range"""
   return person.Strategy(
-      planned_retirement_age=int(min(max(60, strategy.planned_retirement_age), 65)),
-      savings_threshold=min(max(0, strategy.savings_threshold), 1000000),
-      savings_rate=min(max(0, strategy.savings_rate), 0.5),
-      savings_rrsp_fraction=min(max(0, strategy.savings_rrsp_fraction), 1),
-      savings_tfsa_fraction=min(max(0, strategy.savings_tfsa_fraction), 1),
-      lico_target_fraction=min(max(0, strategy.lico_target_fraction), 5),
-      working_period_drawdown_tfsa_fraction=min(max(0, strategy.working_period_drawdown_tfsa_fraction), 1),
-      working_period_drawdown_nonreg_fraction=min(max(0, strategy.working_period_drawdown_nonreg_fraction), 1),
-      oas_bridging_fraction=min(max(0, strategy.oas_bridging_fraction), 5),
-      drawdown_ced_fraction=min(max(0, strategy.drawdown_ced_fraction), 1),
-      initial_cd_fraction=min(max(0, strategy.initial_cd_fraction), 1),
-      drawdown_preferred_rrsp_fraction=min(max(0, strategy.drawdown_preferred_rrsp_fraction), 1),
-      drawdown_preferred_tfsa_fraction=min(max(0, strategy.drawdown_preferred_tfsa_fraction), 1),
-      reinvestment_preference_tfsa_fraction=min(max(0, strategy.reinvestment_preference_tfsa_fraction), 1),
+      planned_retirement_age=int(min(max(bounds.planned_retirement_age_min, strategy.planned_retirement_age), bounds.planned_retirement_age_max)),
+      savings_threshold=min(max(bounds.savings_threshold_min, strategy.savings_threshold), bounds.savings_threshold_max),
+      savings_rate=min(max(bounds.savings_rate_min, strategy.savings_rate), bounds.savings_rate_max),
+      savings_rrsp_fraction=min(max(bounds.savings_rrsp_fraction_min, strategy.savings_rrsp_fraction), bounds.savings_rrsp_fraction_max),
+      savings_tfsa_fraction=min(max(bounds.savings_tfsa_fraction_min, strategy.savings_tfsa_fraction), bounds.savings_tfsa_fraction_max),
+      lico_target_fraction=min(max(bounds.lico_target_fraction_min, strategy.lico_target_fraction), bounds.lico_target_fraction_max),
+      working_period_drawdown_tfsa_fraction=min(max(bounds.working_period_drawdown_tfsa_fraction_min, strategy.working_period_drawdown_tfsa_fraction), bounds.working_period_drawdown_tfsa_fraction_max),
+      working_period_drawdown_nonreg_fraction=min(max(bounds.working_period_drawdown_nonreg_fraction_min, strategy.working_period_drawdown_nonreg_fraction), bounds.working_period_drawdown_nonreg_fraction_max),
+      oas_bridging_fraction=min(max(bounds.oas_bridging_fraction_min, strategy.oas_bridging_fraction), bounds.oas_bridging_fraction_max),
+      drawdown_ced_fraction=min(max(bounds.drawdown_ced_fraction_min, strategy.drawdown_ced_fraction), bounds.drawdown_ced_fraction_max),
+      initial_cd_fraction=min(max(bounds.initial_cd_fraction_min, strategy.initial_cd_fraction), bounds.initial_cd_fraction_max),
+      drawdown_preferred_rrsp_fraction=min(max(bounds.drawdown_preferred_rrsp_fraction_min, strategy.drawdown_preferred_rrsp_fraction), bounds.drawdown_preferred_rrsp_fraction_max),
+      drawdown_preferred_tfsa_fraction=min(max(bounds.drawdown_preferred_tfsa_fraction_min, strategy.drawdown_preferred_tfsa_fraction), bounds.drawdown_preferred_tfsa_fraction_max),
+      reinvestment_preference_tfsa_fraction=min(max(bounds.reinvestment_preference_tfsa_fraction_min, strategy.reinvestment_preference_tfsa_fraction), bounds.reinvestment_preference_tfsa_fraction_max),
   )
 
-def Optimize(gender, n, weights, population_size, max_generations, use_multiprocessing):
+def Optimize(gender, n, weights, population_size, max_generations, use_multiprocessing, bounds):
   """Run a genetic algorithm to optimize a strategy based on fitness function weights"""
 
   def individual_to_strategy(individual):
     return ValidateStrategy(person.Strategy(
-        planned_retirement_age=60+5*individual[0],
-        savings_threshold=1000000*individual[1],
-        savings_rate=0.5*individual[2],
-        savings_rrsp_fraction=individual[3],
-        savings_tfsa_fraction=individual[4],
-        lico_target_fraction=5*individual[5],
-        working_period_drawdown_tfsa_fraction=individual[6],
-        working_period_drawdown_nonreg_fraction=individual[7],
-        oas_bridging_fraction=5*individual[8],
-        drawdown_ced_fraction=individual[9],
-        initial_cd_fraction=individual[10],
-        drawdown_preferred_rrsp_fraction=individual[11],
-        drawdown_preferred_tfsa_fraction=individual[12],
-        reinvestment_preference_tfsa_fraction=individual[13],
-        ))
+        planned_retirement_age=bounds.planned_retirement_age_min + (bounds.planned_retirement_age_max - bounds.planned_retirement_age_min)*individual[0],
+        savings_threshold=bounds.savings_threshold_min + (bounds.savings_threshold_max - bounds.savings_threshold_min)*individual[1],
+        savings_rate=bounds.savings_rate_min + (bounds.savings_rate_max - bounds.savings_rate_min)*individual[2],
+        savings_rrsp_fraction=bounds.savings_rrsp_fraction_min + (bounds.savings_rrsp_fraction_max - bounds.savings_rrsp_fraction_min)*individual[3],
+        savings_tfsa_fraction=bounds.savings_tfsa_fraction_min + (bounds.savings_tfsa_fraction_max - bounds.savings_tfsa_fraction_min)*individual[4],
+        lico_target_fraction=bounds.lico_target_fraction_min + (bounds.lico_target_fraction_max - bounds.lico_target_fraction_min)*individual[5],
+        working_period_drawdown_tfsa_fraction=bounds.working_period_drawdown_tfsa_fraction_min + (bounds.working_period_drawdown_tfsa_fraction_max - bounds.working_period_drawdown_tfsa_fraction_min)*individual[6],
+        working_period_drawdown_nonreg_fraction=bounds.working_period_drawdown_nonreg_fraction_min + (bounds.working_period_drawdown_nonreg_fraction_max - bounds.working_period_drawdown_nonreg_fraction_min)*individual[7],
+        oas_bridging_fraction=bounds.oas_bridging_fraction_min + (bounds.oas_bridging_fraction_max - bounds.oas_bridging_fraction_min)*individual[8],
+        drawdown_ced_fraction=bounds.drawdown_ced_fraction_min + (bounds.drawdown_ced_fraction_max - bounds.drawdown_ced_fraction_min)*individual[9],
+        initial_cd_fraction=bounds.initial_cd_fraction_min + (bounds.initial_cd_fraction_max - bounds.initial_cd_fraction_min)*individual[10],
+        drawdown_preferred_rrsp_fraction=bounds.drawdown_preferred_rrsp_fraction_min + (bounds.drawdown_preferred_rrsp_fraction_max - bounds.drawdown_preferred_rrsp_fraction_min)*individual[11],
+        drawdown_preferred_tfsa_fraction=bounds.drawdown_preferred_tfsa_fraction_min + (bounds.drawdown_preferred_tfsa_fraction_max - bounds.drawdown_preferred_tfsa_fraction_min)*individual[12],
+        reinvestment_preference_tfsa_fraction=bounds.reinvestment_preference_tfsa_fraction_min + (bounds.reinvestment_preference_tfsa_fraction_max - bounds.reinvestment_preference_tfsa_fraction_min)*individual[13],
+        ),
+        bounds)
  
   class MyGeneticAlgorithm(pyeasyga.GeneticAlgorithm):
 
@@ -328,6 +376,36 @@ if __name__ == '__main__':
   parser.add_argument("--drawdown_preferred_tfsa_fraction", help="strategy parameter", type=float, default=0.5)
   parser.add_argument("--reinvestment_preference_tfsa_fraction", help="strategy parameter", type=float, default=0.8)
 
+  # Strategy parameter bounds
+  parser.add_argument("--planned_retirement_age_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.planned_retirement_age_min)
+  parser.add_argument("--planned_retirement_age_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.planned_retirement_age_max)
+  parser.add_argument("--savings_threshold_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_threshold_min)
+  parser.add_argument("--savings_threshold_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_threshold_max)
+  parser.add_argument("--savings_rate_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_rate_min)
+  parser.add_argument("--savings_rate_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_rate_max)
+  parser.add_argument("--savings_rrsp_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_rrsp_fraction_min)
+  parser.add_argument("--savings_rrsp_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_rrsp_fraction_max)
+  parser.add_argument("--savings_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_tfsa_fraction_min)
+  parser.add_argument("--savings_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_tfsa_fraction_max)
+  parser.add_argument("--lico_target_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.lico_target_fraction_min)
+  parser.add_argument("--lico_target_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.lico_target_fraction_max)
+  parser.add_argument("--working_period_drawdown_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_tfsa_fraction_min)
+  parser.add_argument("--working_period_drawdown_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_tfsa_fraction_max)
+  parser.add_argument("--working_period_drawdown_nonreg_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_nonreg_fraction_min)
+  parser.add_argument("--working_period_drawdown_nonreg_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_nonreg_fraction_max)
+  parser.add_argument("--oas_bridging_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.oas_bridging_fraction_min)
+  parser.add_argument("--oas_bridging_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.oas_bridging_fraction_max)
+  parser.add_argument("--drawdown_ced_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_ced_fraction_min)
+  parser.add_argument("--drawdown_ced_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_ced_fraction_max)
+  parser.add_argument("--initial_cd_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.initial_cd_fraction_min)
+  parser.add_argument("--initial_cd_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.initial_cd_fraction_max)
+  parser.add_argument("--drawdown_preferred_rrsp_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_preferred_rrsp_fraction_min)
+  parser.add_argument("--drawdown_preferred_rrsp_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_preferred_rrsp_fraction_max)
+  parser.add_argument("--drawdown_preferred_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_preferred_tfsa_fraction_min)
+  parser.add_argument("--drawdown_preferred_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.drawdown_preferred_tfsa_fraction_max)
+  parser.add_argument("--reinvestment_preference_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.reinvestment_preference_tfsa_fraction_min)
+  parser.add_argument("--reinvestment_preference_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.reinvestment_preference_tfsa_fraction_max)
+
   # Fitness function component weights
   parser.add_argument("--consumption_avg_lifetime", help="fitness component weight", type=float, default=0)
   parser.add_argument("--consumption_avg_working", help="fitness component weight", type=float, default=0)
@@ -368,6 +446,36 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
+  bounds = StrategyBounds(
+      args.planned_retirement_age_min,
+      args.planned_retirement_age_max,
+      args.savings_threshold_min,
+      args.savings_threshold_max,
+      args.savings_rate_min,
+      args.savings_rate_max,
+      args.savings_rrsp_fraction_min,
+      args.savings_rrsp_fraction_max,
+      args.savings_tfsa_fraction_min,
+      args.savings_tfsa_fraction_max,
+      args.lico_target_fraction_min,
+      args.lico_target_fraction_max,
+      args.working_period_drawdown_tfsa_fraction_min,
+      args.working_period_drawdown_tfsa_fraction_max,
+      args.working_period_drawdown_nonreg_fraction_min,
+      args.working_period_drawdown_nonreg_fraction_max,
+      args.oas_bridging_fraction_min,
+      args.oas_bridging_fraction_max,
+      args.drawdown_ced_fraction_min,
+      args.drawdown_ced_fraction_max,
+      args.initial_cd_fraction_min,
+      args.initial_cd_fraction_max,
+      args.drawdown_preferred_rrsp_fraction_min,
+      args.drawdown_preferred_rrsp_fraction_max,
+      args.drawdown_preferred_tfsa_fraction_min,
+      args.drawdown_preferred_tfsa_fraction_max,
+      args.reinvestment_preference_tfsa_fraction_min,
+      args.reinvestment_preference_tfsa_fraction_max,)
+
   strategy = ValidateStrategy(person.Strategy(
       planned_retirement_age=args.planned_retirement_age,
       savings_threshold=args.savings_threshold,
@@ -382,7 +490,8 @@ if __name__ == '__main__':
       initial_cd_fraction=args.initial_cd_fraction,
       drawdown_preferred_rrsp_fraction=args.drawdown_preferred_rrsp_fraction,
       drawdown_preferred_tfsa_fraction=args.drawdown_preferred_tfsa_fraction,
-      reinvestment_preference_tfsa_fraction=args.reinvestment_preference_tfsa_fraction))
+      reinvestment_preference_tfsa_fraction=args.reinvestment_preference_tfsa_fraction),
+    bounds)
   
   weights = {
     "ConsumptionAvgLifetime": args.consumption_avg_lifetime,
@@ -419,7 +528,7 @@ if __name__ == '__main__':
   }
 
   if args.optimize:
-    strategy = Optimize(args.gender, args.number, weights, args.population_size, args.max_generations, not args.disable_multiprocessing)
+    strategy = Optimize(args.gender, args.number, weights, args.population_size, args.max_generations, not args.disable_multiprocessing, bounds)
 
   # Run lives
   accumulators = RunPopulation(strategy, args.gender, args.number, args.basic_run, not args.disable_multiprocessing)
