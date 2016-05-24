@@ -165,7 +165,8 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
   ga.create_individual = create_individual
 
   def mutate(individual):
-    individual[random.randrange(len(individual))] += random.gauss(0, 0.1)
+    for i in len(individual):
+      individual[i] += random.gauss(0, 0.1)
   ga.mutate = mutate
 
   def crossover(parent1, parent2):
