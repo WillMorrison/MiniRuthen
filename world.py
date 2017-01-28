@@ -2,6 +2,7 @@
 
 import collections
 
+# Unless otherwise noted, all dollar amounts are real dollar amounts
 
 # The year at which subject turns 30 and the simulated lifetime starts
 BASE_YEAR = 2014
@@ -19,7 +20,7 @@ GIS_REDUCTION_RATE = 0.5 # GIS is reduced by this fraction of income above GIS_C
 
 # CPP (Canada Pension Plan) Parameters
 YMPE = 52500 # Year's Maximum Pensionable Earnings in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
-YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE
+YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE. Nominal value.
 MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
 CPP_EMPLOYEE_RATE = 0.0495 # CPP Contribution Rate, Employee component
 CPP_EXPECTED_RETIREMENT_AGE = 65 # Age at which there is no actuarial adjustment to the CPP benefits
@@ -94,8 +95,8 @@ MINIMUM_WITHDRAWAL_FRACTION = ExtendedDict(None,
      (95, 0.2000)])
 
 # TFSA (Tax-Free Savings Account) Parameters
-TFSA_ANNUAL_CONTRIBUTION_LIMIT = 10000 # Annual new TFSA contribution room in 2014 and subsequently
-TFSA_INITIAL_CONTRIBUTION_LIMIT = 36000 # Contribution room when the TFSA fund starts in 2014
+TFSA_ANNUAL_CONTRIBUTION_LIMIT = 5500 # Annual new TFSA contribution room in 2014 and subsequently
+TFSA_INITIAL_CONTRIBUTION_LIMIT = 40000 # Contribution room when the TFSA fund starts in 2014.
 
 
 # Income Tax Parameters
@@ -107,6 +108,7 @@ class TaxSchedule(ExtendedDict):
    key_t = min(e_key for e_key in self.keys() if e_key > key)
    p = (key-key_b)/(key_t-key_b)
    return self[key_b] + p * (self[key_t]-self[key_b])
+
 
 FEDERAL_TAX_SCHEDULE = TaxSchedule(None,
 [(0, 0),
@@ -142,7 +144,7 @@ DIVIDEND_TAX_CREDIT_RATE = 0.150198 # Fraction of dividends claimable as a non-r
 NON_REFUNDABLE_CREDIT_RATE = 0.15 # Equal to the rate at the lowest tax bracket
 
 # Economic Parameters
-MEAN_INVESTMENT_RETURN = 0.0532 # Mean of normal distribution for returns to funds
+MEAN_INVESTMENT_RETURN = 0.0532 # Mean of normal distribution for returns to funds.
 STD_INVESTMENT_RETURN = 0.1030 # Standard deviation for normal distribution for returns to funds
 IMMEDIATELY_REALIZED_GAINS_FRACTION = 0.3 # Fraction of new growth that is immediately realized 
 UNREALIZED_GAINS_REALIZATION_FRACTION = 0.2 # Fraction of unrealized gains that become realized each year
@@ -400,7 +402,7 @@ CED_PROPORTION = ExtendedDict(None, _table_items)
 INVOLUNTARY_RETIREMENT_INCREMENT = 0.08
 MINIMUM_RETIREMENT_AGE = 60
 MAXIMUM_RETIREMENT_AGE = 65
-UNEMPLOYMENT_PROBABILITY = 0.15
+UNEMPLOYMENT_PROBABILITY = 0.10
 
 # Fitness component constants
 FRACTION_WORKING_CONSUMPTION = 0.8
