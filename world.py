@@ -9,19 +9,22 @@ BASE_YEAR = 2014
 START_AGE = 30
 
 # OAS (Old Age Security benefit) Parameters
-OAS_BENEFIT = 6676.69 # Full-year OAS benefit, 2014 and subsequent years
-OAS_CLAWBACK_EXEMPTION = 71592 # Income level beyond which OAS gets clawed back, all years
+OAS_BENEFIT = 6676.69 # Full-year OAS benefit, 2014 and subsequent years; nominal, indexed by personal CPI
+OAS_CLAWBACK_EXEMPTION = 71592 # Income level beyond which OAS gets clawed back, all years; nominal, indexed by personal CPI
 OAS_CLAWBACK_RATE = 0.15 # OAS is reduced by this fraction of income in excess of OAS_CLAWBACK_EXEMPTION
 
 # GIS (Guaranteed Income Security benefit) Parameters
-GIS_SINGLES_RATE = 9015.37 # GIS maximum benefit (2014) for a senior with no other income
-GIS_CLAWBACK_EXEMPTION = 12 # GIS is reduced in respect of income above this level
+GIS_SINGLES_RATE = 9015.37 # GIS maximum benefit (2014) for a senior with no other income; nominal, indexed by personal CPI
+GIS_CLAWBACK_EXEMPTION = 12 # GIS is reduced in respect of income above this level; constant for all years
 GIS_REDUCTION_RATE = 0.5 # GIS is reduced by this fraction of income above GIS_CLAWBACK_EXEMPTION
+GIS_SUPPLEMENT_EXEMPTION = 4431.28 # GIS supplement is reduced in respect of income above this level; nominal, indexed by personal CPI
+GIS_SUPPLEMENT_MAXIMUM = 910.27 # GIS supplement maximum benefit (2014) for a senior with no other income; nominal, indexed by personal CPI
+GIS_SUPPLEMENT_REDUCTION_RATE = 0.25 # GIS supplement is reduced by this fraction of income above GIS_SUPPLEMENT_EXEMPTION
 
 # CPP (Canada Pension Plan) Parameters
-YMPE = 52500 # Year's Maximum Pensionable Earnings in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
-YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE. Nominal value.
-MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, grows at 0.01 per year thereafter (*=(1+PARGE))
+YMPE = 52500 # Year's Maximum Pensionable Earnings in 2014, indexed by personal CPI and for real wage growth (1+PARGE)
+YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE. Nominal value, constant for all years.
+MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, 5-year moving average of nominal YMPE values
 CPP_EMPLOYEE_RATE = 0.0495 # CPP Contribution Rate, Employee component
 CPP_EXPECTED_RETIREMENT_AGE = 65 # Age at which there is no actuarial adjustment to the CPP benefits
 AAF_PRE65 = 0.072 # CPP actuarial adjustment factor for early retirement - ages 60 - 64, benefit decrement per year
@@ -29,7 +32,7 @@ AAF_POST65 = 0.084 # CPP actuarial adjustment factor for delayed retirement, aft
 AAF_POST65_YEARS_CAP = 5 # Years after retirement that delayed retirement benefit increment per year caps at
 CPP_GENERAL_DROPOUT_FACTOR = 0.17 # CPP general dropout fraction: fraction of the earnings years that can be dropped out
 CPP_RETIREMENT_BENEFIT_FRACTION = 0.25 # CPP fraction of earnings replaced (capped)
-CPP_DEATH_BENEFIT = 2500
+CPP_DEATH_BENEFIT = 2500 # nominal value, constant for all years
 EARNINGS_YMPE_FRACTION = 1
 PRE_SIM_CPP_YEARS = START_AGE - 18
 PRE_SIM_ZERO_EARNING_YEARS = 4
@@ -38,7 +41,7 @@ PRE_SIM_SUM_YMPE_FRACTIONS = 6
 PRE_SIM_YMPE_FRACTIONS = [0]*PRE_SIM_ZERO_EARNING_YEARS + [PRE_SIM_SUM_YMPE_FRACTIONS/PRE_SIM_POSITIVE_EARNING_YEARS]*PRE_SIM_POSITIVE_EARNING_YEARS
 
 # EI (Employment Insurance) parameters
-EI_MAX_INSURABLE_EARNINGS = 48600 # Maximum Insurable Earnings in 2014, grows at 0.01 per year thereafter, (*=(1+PARGE))
+EI_MAX_INSURABLE_EARNINGS = 48600 # Maximum Insurable Earnings in 2014; nominal, indexed by personal CPI, and for real wage growth (1+PARGE)
 EI_BENEFIT_FRACTION = 0.55 # EI benefits for the unemployed are this fraction of the previous year's earnings
 EI_PREMIUM_RATE = 0.0192 # Employment Insurance Premium Rate, all years
 EI_REPAYMENT_BASE_FRACTION = 1.25 # Fraction of EI_MAX_INSURABLE_EARNINGS; income beyond this leads to EI benefit repayment
@@ -47,8 +50,8 @@ EI_REPAYMENT_REDUCTION_RATE = 0.3 # EI benefit is clawed back at this rate for e
 EI_PREINITIAL_YEAR_INSURABLE_EARNINGS = min(EARNINGS_YMPE_FRACTION * YMPE, EI_MAX_INSURABLE_EARNINGS) # Insurable earnings for the year prior to the base year
 								  
 # RRSP (Registered Retirement Savings Plan) Parameters (also RRIF after age 71)
-RRSP_LIMIT = 24270 # Maximum NEW RRSP room in a year; contributions are permitted up to the level of RRSP room
-RRSP_INITIAL_LIMIT = 50000 # Initial RRSP room upon starting the fund in 2014
+RRSP_LIMIT = 24270 # Maximum NEW RRSP room in a year; contributions are permitted up to the level of RRSP room; nominal, indexed by personal CPI and real wage growth (1+PARGE)
+RRSP_INITIAL_LIMIT = 50000 # Initial RRSP room upon starting the fund in 2014; maintained in nominal terms by the program for new room and contributions
 RRSP_ACCRUAL_FRACTION = 0.18 # New RRSP contribution room is based on this fraction of the PREVIOUS year's earnings
 
 class ExtendedDict(collections.defaultdict):
@@ -96,7 +99,7 @@ MINIMUM_WITHDRAWAL_FRACTION = ExtendedDict(None,
 
 # TFSA (Tax-Free Savings Account) Parameters
 TFSA_ANNUAL_CONTRIBUTION_LIMIT = 5500 # Annual new TFSA contribution room in 2014 and subsequently
-TFSA_INITIAL_CONTRIBUTION_LIMIT = 40000 # Contribution room when the TFSA fund starts in 2014.
+TFSA_INITIAL_CONTRIBUTION_LIMIT = 40000 # Contribution room when the TFSA fund starts in 2014. TFSA room is maintained by the program for contributions and new room.
 
 
 # Income Tax Parameters
@@ -110,7 +113,7 @@ class TaxSchedule(ExtendedDict):
    return self[key_b] + p * (self[key_t]-self[key_b])
 
 
-FEDERAL_TAX_SCHEDULE = TaxSchedule(None,
+FEDERAL_TAX_SCHEDULE = TaxSchedule(None, # Both the ordinate and abscissa values are scaled by personal CPI
 [(0, 0),
  (43953, 6593),
  (87907, 16263),
@@ -120,21 +123,21 @@ FEDERAL_TAX_SCHEDULE = TaxSchedule(None,
 PROVINCIAL_TAX_FRACTION = 0.5
 
 # End of life probate tax parameters
-PROBATE_RATE_CHANGE_LEVEL = 50000
+PROBATE_RATE_CHANGE_LEVEL = 50000 # Treated as constant nominal value for all simulation years, i.e., not indexed
 PROBATE_RATE_ABOVE = 0.015
 PROBATE_RATE_BELOW = 0.005
 EXECUTOR_COST_FRACTION = 0.02
-FUNERAL_COST = 10000
+FUNERAL_COST = 10000 # nominal, indexed by personal CPI
 
 # Credit-related
-BASIC_PERSONAL_AMOUNT = 11138 # Basic Personal Amount for federal non-refundable income tax credits
-AGE_AMOUNT_MAXIMUM = 6916 # Maximum Age Amount for federal non-refundable income tax credits
-AGE_AMOUNT_EXEMPTION = 34873 # The age amount is reduced by income in excess of this amount
+BASIC_PERSONAL_AMOUNT = 11138 # Basic Personal Amount for federal non-refundable income tax credits; nominal, indexed by personal CPI
+AGE_AMOUNT_MAXIMUM = 6916 # Maximum Age Amount for federal non-refundable income tax credits; nominal, indexed by personal CPI
+AGE_AMOUNT_EXEMPTION = 34873 # The age amount is reduced by income in excess of this amount; nominal, indexed by personal CPI
 AGE_AMOUNT_REDUCTION_RATE = 0.15 # The age amount is reduced by this fraction of income in excess of AGE_AMOUNT_EXEMPTION
-PENSION_AMOUNT_MAXIMUM = 2000 # A pension credit is claimable for pension income up to this amount
+PENSION_AMOUNT_MAXIMUM = 2000 # A pension credit is claimable for pension income up to this amount; treated as nominal (unindexed) for all years
 
 # Social Benefit Repayment Parameters
-SBR_BASE_AMOUNT = 71592 # For income in excess of this amount, social benefits are reduced (clawed back)
+SBR_BASE_AMOUNT = 71592 # For income in excess of this amount, social benefits are reduced (clawed back); nominal, indexed by personal CPI
 SBR_REDUCTION_RATE = 0.15 # Social benefits are reduced by this fraction of income in excess of SBR_BASE_AMOUNT
 
 # Other Federal Income Tax Parameters
@@ -150,8 +153,8 @@ IMMEDIATELY_REALIZED_GAINS_FRACTION = 0.3 # Fraction of new growth that is immed
 UNREALIZED_GAINS_REALIZATION_FRACTION = 0.2 # Fraction of unrealized gains that become realized each year
 
 # Other Miscellaneous Parameters
-LICO_SINGLE_CITY_WP = 24312 # Low Income Cut-Off
-SALES_TAX_EXEMPTION = 8000 # Assumed amount of spending deemed NOT subject to HST sales tax
+LICO_SINGLE_CITY_WP = 24312 # Low Income Cut-Off; nominal, indexed by personal CPI
+SALES_TAX_EXEMPTION = 8000 # Assumed amount of spending deemed NOT subject to HST sales tax; nominal, indexed by personal CPI
 HST_RATE = 0.13 # Harmonized Sales Tax rate is the sum of 0.05 GST rate(federal) and 0.08 PST rate(provincial)
 DISCOUNT_RATE = 0.03 # Annual discount rate applied to consumption to reflect time preference
 PARGE = 0.01 # Projected annual real growth in earnings
