@@ -8,6 +8,10 @@ import collections
 BASE_YEAR = 2014
 START_AGE = 30
 
+# Inflation parameters
+INFLATION_MEAN = 0.02 # Average annual inflation
+INFLATION_STDDEV = 0.007 # Standard deviation of annual inflation
+
 # OAS (Old Age Security benefit) Parameters
 OAS_BENEFIT = 6676.69 # Full-year OAS benefit, 2014 and subsequent years; nominal, indexed by personal CPI
 OAS_CLAWBACK_EXEMPTION = 71592 # Income level beyond which OAS gets clawed back, all years; nominal, indexed by personal CPI

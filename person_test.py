@@ -160,6 +160,19 @@ class PersonTest(unittest.TestCase):
     year_rec = j_canuck.AnnualSetup()
     self.assertEqual(year_rec.growth_rate, 0.05)
 
+  @unittest.mock.patch('random.normalvariate', return_value=0.02)
+  def testAnnualSetupInflationFirstYear(self, mock_random):
+    j_canuck = person.Person(strategy=self.default_strategy)
+    year_rec = j_canuck.AnnualSetup()
+    self.assertEqual(year_rec.cpi, 1)
+
+  @unittest.mock.patch('random.normalvariate', return_value=0.02)
+  def testAnnualSetupInflation(self, mock_random):
+    j_canuck = person.Person(strategy=self.default_strategy)
+    j_canuck.year = world.BASE_YEAR + 1
+    year_rec = j_canuck.AnnualSetup()
+    self.assertEqual(year_rec.cpi, 1.02)
+
   def testAnnualSetupRoomTransfer(self):
     j_canuck = person.Person(strategy=self.default_strategy)
     j_canuck.tfsa_room = 30

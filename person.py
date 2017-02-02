@@ -36,6 +36,7 @@ class Person(object):
     self.age = world.START_AGE
     self.gender = gender
     self.strategy = strategy
+    self.cpi = 1  # Ignoring factor of 100 and StatsCan rounding rules here.
     self.basic_only=basic_only
     self.employed_last_year = True
     self.retired = False
@@ -111,6 +112,12 @@ class Person(object):
     year_rec = utils.YearRecord()
     year_rec.age = self.age
     year_rec.year = self.year
+    if self.year == world.BASE_YEAR:
+      self.cpi = 1
+    else:
+      self.cpi = self.cpi * (1 + random.normalvariate(world.INFLATION_MEAN, world.INFLATION_STDDEV))
+    year_rec.cpi = self.cpi
+
 
     # Reap souls
     if self.gender == MALE:
