@@ -173,6 +173,14 @@ class PersonTest(unittest.TestCase):
     year_rec = j_canuck.AnnualSetup()
     self.assertEqual(year_rec.cpi, 1.02)
 
+  @unittest.mock.patch('random.normalvariate', return_value=0.02)
+  def testAnnualSetupCPIHistory(self, mock_random):
+    j_canuck = person.Person(strategy=self.default_strategy)
+    _ = j_canuck.AnnualSetup()
+    j_canuck.year = world.BASE_YEAR + 1
+    _ = j_canuck.AnnualSetup()
+    self.assertEqual(j_canuck.cpi_history, [1, 1.02])
+
   def testAnnualSetupRoomTransfer(self):
     j_canuck = person.Person(strategy=self.default_strategy)
     j_canuck.tfsa_room = 30

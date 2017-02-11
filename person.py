@@ -37,6 +37,7 @@ class Person(object):
     self.gender = gender
     self.strategy = strategy
     self.cpi = 1  # Ignoring factor of 100 and StatsCan rounding rules here.
+    self.cpi_history = []
     self.basic_only=basic_only
     self.employed_last_year = True
     self.retired = False
@@ -116,6 +117,7 @@ class Person(object):
       self.cpi = 1
     else:
       self.cpi = self.cpi * (1 + random.normalvariate(world.INFLATION_MEAN, world.INFLATION_STDDEV))
+    self.cpi_history.append(self.cpi)
     year_rec.cpi = self.cpi
 
 
