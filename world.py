@@ -28,7 +28,7 @@ GIS_SUPPLEMENT_REDUCTION_RATE = 0.25 # GIS supplement is reduced by this fractio
 # CPP (Canada Pension Plan) Parameters
 YMPE = 52500 # Year's Maximum Pensionable Earnings in 2014, indexed by personal CPI and for real wage growth (1+PARGE)
 YBE = 3500 # Year's Basic Exemption; CPP contributions are payable on earnings between YBE and YMPE. Nominal value, constant for all years.
-MPEA = 49840 # Maxium Pensionable Earnings Average in 2014, 5-year moving average of nominal YMPE values
+MPEA_YEARS = 5 # Number of years over which to calculate the moving average of YMPE
 CPP_EMPLOYEE_RATE = 0.0495 # CPP Contribution Rate, Employee component
 CPP_EXPECTED_RETIREMENT_AGE = 65 # Age at which there is no actuarial adjustment to the CPP benefits
 AAF_PRE65 = 0.072 # CPP actuarial adjustment factor for early retirement - ages 60 - 64, benefit decrement per year

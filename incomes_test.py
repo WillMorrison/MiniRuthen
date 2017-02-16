@@ -154,40 +154,61 @@ class IncomeTest(unittest.TestCase):
     income.ympe_fractions = [0.8]*37 + [0]*10
     fake_person = unittest.mock.MagicMock()
     fake_person.age = 65
+    fake_person.year = 2049
+    fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 13393.12386743)
+    self.assertAlmostEqual(income.benefit_amount, 13694.3691932)
 
   def testCPPRetired65AllPositiveEarnings(self):
     income = incomes.CPP()
     income.ympe_fractions = [0.8]*42 + [0]*5
     fake_person = unittest.mock.MagicMock()
     fake_person.age = 65
+    fake_person.year = 2049
+    fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 14120.69627212)
+    self.assertAlmostEqual(income.benefit_amount, 14438.3065467)
 
   def testCPPRetired68AllPositiveEarnings(self):
     income = incomes.CPP()
     income.ympe_fractions = [0.8]*45 + [0]*5
     fake_person = unittest.mock.MagicMock()
     fake_person.age = 68
+    fake_person.year = 2052
+    fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 18214.806497306)
+    self.assertAlmostEqual(income.benefit_amount, 18624.5036950)
 
   def testCPPRetired72AllPositiveEarnings(self):
     income = incomes.CPP()
     income.ympe_fractions = [0.8]*49 + [0]*5
     fake_person = unittest.mock.MagicMock()
     fake_person.age = 72
+    fake_person.year = 2056
+    fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 21497.802690981)
+    self.assertAlmostEqual(income.benefit_amount, 21981.3428000)
 
   def testCPPRetired63AllPositiveEarnings(self):
     income = incomes.CPP()
     income.ympe_fractions = [0.8]*40 + [0]*5
     fake_person = unittest.mock.MagicMock()
     fake_person.age = 63
+    fake_person.year = 2047
+    fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 11849.148131491)
+    self.assertAlmostEqual(income.benefit_amount, 12115.6655268)
+
+  def testCPPRetired65AllPositiveEarningsWithInflation(self):
+    income = incomes.CPP()
+    income.ympe_fractions = [0.8]*42 + [0]*5
+    fake_person = unittest.mock.MagicMock()
+    fake_person.age = 65
+    fake_person.year = 2049
+    # We use a silly value for the current year's CPI to check we aren't using it.
+    fake_person.cpi_history = [1, 1.02, 1.0404, 1.061208, 1.08243216, 100]
+    income.OnRetirement(fake_person)
+    self.assertAlmostEqual(income.benefit_amount, 15033.4266907)
 
   def testOASBeforeRetirement(self):
     income = incomes.OAS()
@@ -218,6 +239,17 @@ class IncomeTest(unittest.TestCase):
     self.assertEqual(taxable, True)
     self.assertIn(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS),
                   year_rec.incomes)
+
+  def testOASUsesLastYearsCPI(self):
+    income = incomes.OAS()
+    year_rec = utils.YearRecord()
+    year_rec.age = 65
+    year_rec.cpi = 1
+    income.AnnualUpdate(year_rec)
+    year_rec.age = 66
+    year_rec.cpi = 1.02
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertEqual(amount, world.OAS_BENEFIT)
 
   def testGISBenefitPositiveIncomeNoOAS(self):
     income = incomes.GIS()

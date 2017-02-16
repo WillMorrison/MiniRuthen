@@ -50,7 +50,7 @@ class Earnings(Income):
 
   def CalcAmount(self, year_rec):
     if year_rec.is_employed:
-      current_ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) 
+      current_ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi
       earnings = max(random.normalvariate(current_ympe * world.EARNINGS_YMPE_FRACTION, world.YMPE_STDDEV * current_ympe), 0)
       return earnings
     else:
@@ -88,10 +88,9 @@ class CPP(Income):
 
   def AnnualUpdate(self, year_rec):
     if not year_rec.is_retired:
-      self.ympe_fractions.append(year_rec.pensionable_earnings / utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE))
+      self.ympe_fractions.append(year_rec.pensionable_earnings / (utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi))
 
   def OnRetirement(self, person):
-    cpp_avg_earnings = 0
     self.ympe_fractions.sort(reverse=True)
     working_years = len(self.ympe_fractions)
     dropout_years = world.CPP_GENERAL_DROPOUT_FACTOR * working_years
@@ -99,7 +98,11 @@ class CPP(Income):
     whole_year_index = math.floor(cpp_earning_history_length)
     cpp_average_earnings = (sum(self.ympe_fractions[:whole_year_index]) +
                             self.ympe_fractions[whole_year_index]*(cpp_earning_history_length - whole_year_index)) / cpp_earning_history_length
-    indexed_mpea = utils.Indexed(world.MPEA, person.age - world.START_AGE + world.BASE_YEAR, 1 + world.PARGE)
+
+    # Calculate the average nominal YMPE for the previous 5 years (excluding current year)
+    nominal_ympe_history = [utils.Indexed(world.YMPE, person.year - i, 1 + world.PARGE) * person.cpi_history[-(i+1)]
+                            for i in range(1, world.MPEA_YEARS + 1)]
+    indexed_mpea = sum(nominal_ympe_history)/world.MPEA_YEARS
 
     if person.age == world.CPP_EXPECTED_RETIREMENT_AGE:
       self.benefit_amount = cpp_average_earnings * indexed_mpea * world.CPP_RETIREMENT_BENEFIT_FRACTION
@@ -115,12 +118,16 @@ class OAS(Income):
   def __init__(self):
     self.taxable = True
     self.income_type = INCOME_TYPE_OAS
+    self.last_year_cpi = 1
 
   def CalcAmount(self, year_rec):
     if year_rec.age >= world.CPP_EXPECTED_RETIREMENT_AGE:
-      return world.OAS_BENEFIT
+      return world.OAS_BENEFIT * self.last_year_cpi
     else:
       return 0
+
+  def AnnualUpdate(self, year_rec):
+    self.last_year_cpi = year_rec.cpi
 
 
 class GIS(Income):
