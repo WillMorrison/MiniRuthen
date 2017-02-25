@@ -41,6 +41,7 @@ class Person(object):
     self.basic_only=basic_only
     self.employed_last_year = True
     self.retired = False
+    # CAUTION: GIS must be the last income in the list.
     self.incomes = [incomes.Earnings(), incomes.EI(), incomes.CPP(), incomes.OAS(), incomes.GIS()]
     self.funds = {"wp_tfsa": funds.TFSA(), "wp_rrsp": funds.RRSP(), "wp_nonreg": funds.NonRegistered()}
     self.involuntary_retirement_random = random.random()
@@ -136,7 +137,8 @@ class Person(object):
     # Retirement
     if not self.retired:
       if ((self.age == self.strategy.planned_retirement_age and self.age >= world.MINIMUM_RETIREMENT_AGE) or
-          self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIREMENT_INCREMENT):
+          self.involuntary_retirement_random < (self.age - world.MINIMUM_RETIREMENT_AGE + 1) * world.INVOLUNTARY_RETIREMENT_INCREMENT or
+          self.age == world.MAXIMUM_RETIREMENT_AGE):
         self.retired = True
         self.OnRetirement(year_rec)
     year_rec.is_retired = self.retired
@@ -276,8 +278,8 @@ class Person(object):
     """This performs all operations on subject's cash pile"""
     cash = 0
 
-    # Get money from incomes
-    for income in self.incomes:
+    # Get money from incomes. GIS is excluded and done after withdrawals
+    for income in self.incomes[:-1]:
       amount, taxable, year_rec = income.GiveMeMoney(year_rec)
       cash += amount
 
@@ -331,6 +333,11 @@ class Person(object):
     # Update funds
     for fund in self.funds.values():
       fund.Update(year_rec)
+
+    # Now we try to get money from GIS because year_rec is populated with the needed values.
+    income = self.incomes[-1]  # GIS is last in this list
+    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    cash += amount
 
     # Pay income taxes
     year_rec.taxes_payable = self.CalcIncomeTax(year_rec)

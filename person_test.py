@@ -88,7 +88,23 @@ class PersonTest(unittest.TestCase):
     year_rec = j_canuck.AnnualSetup()
     self.assertFalse(year_rec.is_dead)
 
-  def testAnnualSetupInvoluntaryRetirement(self):
+  # Make sure all incomes have GiveMeMoney called in a year (even if they don't return anything)
+  @unittest.mock.patch('random.random')
+  def testAllIncomesGetUsed(self, mock_random):
+    mock_random.return_value = 0.5  # ensure the person doesn't die the first year
+    j_canuck = person.Person(strategy=self.default_strategy)
+    year_rec = j_canuck.AnnualSetup()
+    year_rec = j_canuck.MeddleWithCash(year_rec)
+    self.assertCountEqual(
+        [receipt.income_type for receipt in year_rec.incomes],
+        [incomes.INCOME_TYPE_EARNINGS,
+         incomes.INCOME_TYPE_EI,
+         incomes.INCOME_TYPE_CPP,
+         incomes.INCOME_TYPE_OAS,
+         incomes.INCOME_TYPE_GIS])
+
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testAnnualSetupInvoluntaryRetirement(self, _):
     strategy = self.default_strategy._replace(planned_retirement_age=65)
 
     # Forced retirement at age 60
@@ -115,7 +131,8 @@ class PersonTest(unittest.TestCase):
     self.assertTrue(year_rec.is_retired)
     self.assertTrue(j_canuck.retired)
 
-  def testAnnualSetupVoluntaryRetirement(self):
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testAnnualSetupVoluntaryRetirement(self, _):
     strategy = self.default_strategy._replace(planned_retirement_age=65)
 
     j_canuck = person.Person(strategy=strategy)
@@ -191,7 +208,8 @@ class PersonTest(unittest.TestCase):
     self.assertEqual(year_rec.tfsa_room, 30)
     self.assertEqual(year_rec.rrsp_room, 40)
 
-  def testOnRetirementBridgingFund(self):
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testOnRetirementBridgingFund(self, _):
     strategy = self.default_strategy._replace(planned_retirement_age=63)
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 63
@@ -203,7 +221,8 @@ class PersonTest(unittest.TestCase):
     self.assertIn("bridging", j_canuck.funds)
     self.assertEqual(j_canuck.funds["bridging"].amount, 2 * world.OAS_BENEFIT)
 
-  def testOnRetirementBridgingFundNoRRSP(self):
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testOnRetirementBridgingFundNoRRSP(self, _):
     strategy = self.default_strategy._replace(planned_retirement_age=60)
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 60
@@ -221,7 +240,8 @@ class PersonTest(unittest.TestCase):
     self.assertIn(funds.WithdrawReceipt(3 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_TFSA), year_rec.withdrawals)
     self.assertAlmostEqual(j_canuck.rrsp_room, world.OAS_BENEFIT)
 
-  def testOnRetirementBridgingFundRRSPRoomLimit(self):
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testOnRetirementBridgingFundRRSPRoomLimit(self, _):
     strategy = self.default_strategy._replace(planned_retirement_age=60)
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 60
@@ -237,7 +257,8 @@ class PersonTest(unittest.TestCase):
     self.assertIn(funds.WithdrawReceipt(0.5 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_NONREG), year_rec.withdrawals)
     self.assertEqual(j_canuck.rrsp_room, 0)
 
-  def testOnRetirementFundSplitting(self):
+  @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
+  def testOnRetirementFundSplitting(self, _):
     strategy = self.default_strategy._replace(drawdown_ced_fraction=0.8,
                                               initial_cd_fraction=0.05)
     j_canuck = person.Person(strategy=strategy)
