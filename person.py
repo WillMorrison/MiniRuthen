@@ -155,6 +155,20 @@ class Person(object):
 
     return year_rec
 
+  def CalcPayrollDeductions(self, year_rec):
+    """Calculates and stores EI premium and CPP employee controbutions"""
+    # CPP employee contribution
+    earnings = sum(receipt.amount for receipt in year_rec.incomes
+                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+    year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
+    year_rec.cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
+
+    # EI premium
+    year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE))
+    year_rec.ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
+
+    return year_rec
+
   def CalcIncomeTax(self, year_rec):
     """Calculates the amount of income tax to be paid"""
     # Calculate Total Income
@@ -209,7 +223,6 @@ class Person(object):
 
     # Net Income
     net_income = net_income_before_adjustments - total_social_benefit_repayment
-    year_rec.net_income = net_income
 
     # Taxable Income
     applied_capital_loss_amount = min(taxable_capital_gains, self.capital_loss_carry_forward * world.CG_INCLUSION_RATE)
@@ -220,23 +233,11 @@ class Person(object):
     age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION) * world.AGE_AMOUNT_REDUCTION_RATE
     age_amount = max(0, world.AGE_AMOUNT_MAXIMUM - age_amount_reduction)
 
-    # CPP employee contribution
-    earnings = sum(receipt.amount for receipt in year_rec.incomes
-                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
-    year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
-    cpp_employee_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
-    year_rec.cpp_contribution = cpp_employee_contribution
-
-    # EI premium
-    year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE))
-    ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
-    year_rec.ei_premium = ei_premium
-
     # Federal non-refundable tax credits
     if year_rec.is_dead:
       federal_non_refundable_credits = 0
     else:
-      federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + cpp_employee_contribution + ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
+      federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + year_rec.cpp_contribution + year_rec.ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
 
     # Federal tax on taxable income
     net_federal_tax = max(0, world.FEDERAL_TAX_SCHEDULE[taxable_income] - federal_non_refundable_credits)
@@ -333,6 +334,9 @@ class Person(object):
     # Update funds
     for fund in self.funds.values():
       fund.Update(year_rec)
+
+    # Calculate EI premium and CPP contributions
+    year_rec = self.CalcPayrollDeductions(year_rec)
 
     # Now we try to get money from GIS because year_rec is populated with the needed values.
     income = self.incomes[-1]  # GIS is last in this list

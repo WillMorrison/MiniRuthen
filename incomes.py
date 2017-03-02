@@ -5,6 +5,7 @@ import math
 import random
 import world
 import utils
+import funds
 
 # Types of incomes, used in receipts
 INCOME_TYPE_NONE = "Generic Income"
@@ -135,14 +136,25 @@ class GIS(Income):
   def __init__(self):
     self.taxable = False
     self.income_type = INCOME_TYPE_GIS
-    self.gis_income = 0
+    self.last_year_income_base = 0
+
+  def _CalcIncomeBase(self, year_rec):
+    rrsp_withdrawal_sum = sum(receipt.amount for receipt in year_rec.withdrawals
+                              if receipt.fund_type in (funds.FUND_TYPE_RRSP, funds.FUND_TYPE_BRIDGING))
+    taxable_capital_gains = (sum(receipt.gains for receipt in year_rec.withdrawals) +
+                             sum(receipt.gross_gain for receipt in year_rec.tax_receipts)) * world.CG_INCLUSION_RATE
+    income_base = (sum(receipt.amount for receipt in year_rec.incomes
+                      if receipt.income_type in (INCOME_TYPE_EARNINGS, INCOME_TYPE_CPP, INCOME_TYPE_EI))
+                   + rrsp_withdrawal_sum + taxable_capital_gains - year_rec.ei_premium - year_rec.cpp_contribution)
+    gis_income = min(income_base, self.last_year_income_base)
+    self.last_year_income_base = income_base
+    return gis_income
 
   def CalcAmount(self, year_rec):
+    gis_income = self._CalcIncomeBase(year_rec)
     if sum(receipt.amount for receipt in year_rec.incomes if receipt.income_type == INCOME_TYPE_OAS) > 0:
-      return max(world.GIS_SINGLES_RATE - max(self.gis_income - world.GIS_CLAWBACK_EXEMPTION, 0) * world.GIS_REDUCTION_RATE, 0)
+      gis_benefit = max(world.GIS_SINGLES_RATE * year_rec.cpi - max(gis_income - world.GIS_CLAWBACK_EXEMPTION, 0) * world.GIS_REDUCTION_RATE, 0)
+      gis_supplement = max(world.GIS_SUPPLEMENT_MAXIMUM * year_rec.cpi - max(gis_income - world.GIS_SUPPLEMENT_EXEMPTION * year_rec.cpi, 0) * world.GIS_SUPPLEMENT_REDUCTION_RATE, 0)
+      return gis_benefit + gis_supplement
     else:
       return 0
-
-  def AnnualUpdate(self, year_rec):
-    oas_benefit = sum(receipt.amount for receipt in year_rec.incomes if receipt.income_type == INCOME_TYPE_OAS)
-    self.gis_income = max(year_rec.net_income - oas_benefit, 0)

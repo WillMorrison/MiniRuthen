@@ -306,6 +306,8 @@ class PersonTest(unittest.TestCase):
     year_rec.tax_receipts.append(funds.TaxReceipt(eoy_gains, funds.FUND_TYPE_NONREG))
     year_rec.deposits.append(funds.DepositReceipt(rrsp_contributions, funds.FUND_TYPE_RRSP))
 
+    year_rec = j_canuck.CalcPayrollDeductions(year_rec)
+
     return (j_canuck, year_rec)
 
   def testIncomeTaxEarningsOnly(self):

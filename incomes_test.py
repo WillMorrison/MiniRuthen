@@ -1,6 +1,7 @@
 import unittest
 import unittest.mock
 import incomes
+import funds
 import utils
 import world
 
@@ -251,74 +252,128 @@ class IncomeTest(unittest.TestCase):
     amount, _, _ = income.GiveMeMoney(year_rec)
     self.assertEqual(amount, world.OAS_BENEFIT)
 
+  def testGISCalcIncomeBaseUsesLesserIncome(self):
+    income = incomes.GIS()
+    income.last_year_income_base = 5000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(8000, incomes.INCOME_TYPE_EARNINGS)]
+    year_rec.ei_premium = 0
+    year_rec.cpp_contribution = 0
+    self.assertEqual(income._CalcIncomeBase(year_rec), 5000)
+    self.assertEqual(income.last_year_income_base, 8000)
+
+  def testGISCalcIncomeBaseIncomes(self):
+    income = incomes.GIS()
+    income.last_year_income_base = 10000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(1000, incomes.INCOME_TYPE_EARNINGS),
+                        incomes.IncomeReceipt(2000, incomes.INCOME_TYPE_CPP),
+                        incomes.IncomeReceipt(3000, incomes.INCOME_TYPE_EI)]
+    year_rec.ei_premium = 0
+    year_rec.cpp_contribution = 0
+    self.assertEqual(income._CalcIncomeBase(year_rec), 6000)
+
+  def testGISCalcIncomeBaseRRSPWithdrawals(self):
+    income = incomes.GIS()
+    income.last_year_income_base = 10000
+    year_rec = utils.YearRecord()
+    year_rec.withdrawals = [funds.WithdrawReceipt(2000, 0, funds.FUND_TYPE_RRSP),
+                            funds.WithdrawReceipt(3000, 0, funds.FUND_TYPE_BRIDGING)] 
+    year_rec.ei_premium = 0
+    year_rec.cpp_contribution = 0
+    self.assertEqual(income._CalcIncomeBase(year_rec), 5000)
+
+  def testGISCalcIncomeBaseCapitalGains(self):
+    income = incomes.GIS()
+    income.last_year_income_base = 10000
+    year_rec = utils.YearRecord()
+    year_rec.withdrawals = [funds.WithdrawReceipt(2000, 1000, funds.FUND_TYPE_NONREG)]
+    year_rec.tax_receipts = [funds.TaxReceipt(500, funds.FUND_TYPE_NONREG)]
+    year_rec.ei_premium = 0
+    year_rec.cpp_contribution = 0
+    self.assertEqual(income._CalcIncomeBase(year_rec), 750)
+
+  def testGISCalcIncomeBaseIncomesAndPayrollDeductions(self):
+    income = incomes.GIS()
+    income.last_year_income_base = 10000
+    year_rec = utils.YearRecord()
+    year_rec.incomes = [incomes.IncomeReceipt(5000, incomes.INCOME_TYPE_EARNINGS)]
+    year_rec.ei_premium = 2000
+    year_rec.cpp_contribution = 2000
+    self.assertEqual(income._CalcIncomeBase(year_rec), 1000)
+    
+
+  def setUpYearRecForGIS(self, income_base=0, cpi=1, has_oas=True):
+    year_rec = utils.YearRecord()
+    year_rec.cpi = cpi
+    year_rec.incomes = []
+    if has_oas:
+      year_rec.incomes.append(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS))
+
+    # We want to force some values for the current year's income base
+    year_rec.ei_premium = 0
+    year_rec.cpp_contribution = 0
+    year_rec.incomes.append(incomes.IncomeReceipt(income_base, incomes.INCOME_TYPE_EARNINGS))
+    
+    return year_rec    
+
   def testGISBenefitPositiveIncomeNoOAS(self):
     income = incomes.GIS()
-    income.gis_income = 1000
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(0, incomes.INCOME_TYPE_OAS)]
+    income.last_year_income_base = 1000
+    year_rec = self.setUpYearRecForGIS(has_oas=False, income_base=1000)
     amount, taxable, year_rec = income.GiveMeMoney(year_rec)
     self.assertEqual(amount, 0)
     self.assertFalse(taxable)
     self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_GIS),
-                  year_rec.incomes)
-
-  def testGISBenefitPositiveIncome(self):
-    income = incomes.GIS()
-    income.gis_income = 1000
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
-    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
-    self.assertEqual(amount, 8521.37)
-    self.assertFalse(taxable)
-    self.assertIn(incomes.IncomeReceipt(8521.37, incomes.INCOME_TYPE_GIS),
                   year_rec.incomes)
 
   def testGISBenefitIncomeBelowClawbackExemption(self):
+    """Income base is below clawback exemption and supplement exemption"""
     income = incomes.GIS()
-    income.gis_income = 10
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
-    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
-    self.assertEqual(amount, world.GIS_SINGLES_RATE)
-    self.assertFalse(taxable)
-    self.assertIn(incomes.IncomeReceipt(world.GIS_SINGLES_RATE, incomes.INCOME_TYPE_GIS),
-                  year_rec.incomes)
+    income.last_year_income_base = 10
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=10)
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertAlmostEqual(amount, 9925.64)
+
+  def testGISBenefitIncomeBelowSupplementExemption(self):
+    """Income base is below supplement exemption but above clawback exemption"""
+    income = incomes.GIS()
+    income.last_year_income_base = 1000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=1000)
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertAlmostEqual(amount, 9431.64)
+
+  def testGISBenefitPositiveIncome(self):
+    """Income base is above both clawback and supplement exemption"""
+    income = incomes.GIS()
+    income.last_year_income_base = 5000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=5000)
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertAlmostEqual(amount, 7289.46)
+
+  def testGISBenefitPositiveIncomeWithInflation(self):
+    """Income base is above both clawback and supplement exemption"""
+    income = incomes.GIS()
+    income.last_year_income_base = 5000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=5000, cpi=2)
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertAlmostEqual(amount, 17357.28)
+
+  def testGISBenefitPositiveIncomeNoSupplement(self):
+    """Getting regular GIS benefit but supplemental GIS benefit should be 0"""
+    income = incomes.GIS()
+    income.last_year_income_base = 10000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=10000)
+    amount, _, _ = income.GiveMeMoney(year_rec)
+    self.assertAlmostEqual(amount, 4021.37)
 
   def testGISBenefitReallyPositiveIncome(self):
+    """Regular and supplemental GIS benefit should both be 0"""
     income = incomes.GIS()
-    income.gis_income = 20000
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS)]
-    amount, taxable, year_rec = income.GiveMeMoney(year_rec)
+    income.last_year_income_base = 20000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=20000)
+    amount, _, _ = income.GiveMeMoney(year_rec)
     self.assertEqual(amount, 0)
-    self.assertFalse(taxable)
-    self.assertIn(incomes.IncomeReceipt(0, incomes.INCOME_TYPE_GIS),
-                  year_rec.incomes)
-
-  def testGISAnnualUpdateNoOAS(self):
-    income = incomes.GIS()
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(0, incomes.INCOME_TYPE_OAS)]
-    year_rec.net_income = 5000
-    income.AnnualUpdate(year_rec)
-    self.assertEqual(income.gis_income, 5000)
-  
-  def testGISAnnualUpdateSomeOAS(self):
-    income = incomes.GIS()
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(2500, incomes.INCOME_TYPE_OAS)]
-    year_rec.net_income = 5000
-    income.AnnualUpdate(year_rec)
-    self.assertEqual(income.gis_income, 2500)
-  
-  def testGISAnnualUpdateLotsOfOAS(self):
-    income = incomes.GIS()
-    year_rec = utils.YearRecord()
-    year_rec.incomes = [incomes.IncomeReceipt(2500, incomes.INCOME_TYPE_OAS)]
-    year_rec.net_income = 500
-    income.AnnualUpdate(year_rec)
-    self.assertEqual(income.gis_income, 0)
-
 
 
 if __name__ == '__main__':
