@@ -268,7 +268,8 @@ class IncomeTest(unittest.TestCase):
     year_rec = utils.YearRecord()
     year_rec.incomes = [incomes.IncomeReceipt(1000, incomes.INCOME_TYPE_EARNINGS),
                         incomes.IncomeReceipt(2000, incomes.INCOME_TYPE_CPP),
-                        incomes.IncomeReceipt(3000, incomes.INCOME_TYPE_EI)]
+                        incomes.IncomeReceipt(3000, incomes.INCOME_TYPE_EI),
+                        incomes.IncomeReceipt(4000, incomes.INCOME_TYPE_OAS)]
     year_rec.ei_premium = 0
     year_rec.cpp_contribution = 0
     self.assertEqual(income._CalcIncomeBase(year_rec), 6000)
@@ -352,12 +353,12 @@ class IncomeTest(unittest.TestCase):
     self.assertAlmostEqual(amount, 7289.46)
 
   def testGISBenefitPositiveIncomeWithInflation(self):
-    """Income base is above both clawback and supplement exemption"""
+    """Income base is above both clawback and supplement exemption (with inflation)"""
     income = incomes.GIS()
-    income.last_year_income_base = 5000
-    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=5000, cpi=2)
+    income.last_year_income_base = 10000
+    year_rec = self.setUpYearRecForGIS(has_oas=True, income_base=10000, cpi=2)
     amount, _, _ = income.GiveMeMoney(year_rec)
-    self.assertAlmostEqual(amount, 17357.28)
+    self.assertAlmostEqual(amount, 14572.92)
 
   def testGISBenefitPositiveIncomeNoSupplement(self):
     """Getting regular GIS benefit but supplemental GIS benefit should be 0"""
