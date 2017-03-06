@@ -29,7 +29,7 @@ class ExtendedDictTest(unittest.TestCase):
     self.assertEqual(world.FEDERAL_TAX_SCHEDULE[0], 0)
     self.assertEqual(world.FEDERAL_TAX_SCHEDULE[87907], 16263)
     self.assertEqual(world.FEDERAL_TAX_SCHEDULE[-1234], 0)
-    self.assertEqual(world.FEDERAL_TAX_SCHEDULE[1200000], 318837)
+    self.assertEqual(world.FEDERAL_TAX_SCHEDULE[2200000], 608837)
     self.assertAlmostEqual(world.FEDERAL_TAX_SCHEDULE[10000], 1500.01137578)
 
 if __name__ == '__main__':
