@@ -205,8 +205,8 @@ class PersonTest(unittest.TestCase):
 
     year_rec = j_canuck.AnnualSetup()
 
-    self.assertEqual(year_rec.tfsa_room, 30)
-    self.assertEqual(year_rec.rrsp_room, 40)
+    self.assertEqual(year_rec.tfsa_room, 30 + world.TFSA_ANNUAL_CONTRIBUTION_LIMIT)
+    self.assertEqual(year_rec.rrsp_room, 40)  # RRSP room is updated after we have earnings info
 
   @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
   def testOnRetirementBridgingFund(self, _):

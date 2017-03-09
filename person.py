@@ -150,6 +150,7 @@ class Person(object):
     year_rec.growth_rate = random.normalvariate(world.MEAN_INVESTMENT_RETURN, world.STD_INVESTMENT_RETURN)
 
     # Fund room
+    self.tfsa_room += world.TFSA_ANNUAL_CONTRIBUTION_LIMIT * self.cpi
     year_rec.tfsa_room = self.tfsa_room
     year_rec.rrsp_room = self.rrsp_room
 
@@ -284,6 +285,13 @@ class Person(object):
       amount, taxable, year_rec = income.GiveMeMoney(year_rec)
       cash += amount
 
+    # Update RRSP room
+    earnings = sum(receipt.amount for receipt in year_rec.incomes
+                   if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
+    self.rrsp_room += min(earnings * world.RRSP_ACCRUAL_FRACTION,
+                          utils.Indexed(world.RRSP_LIMIT, year_rec.year, 1 + world.PARGE) * year_rec.cpi)
+    year_rec.rrsp_room = self.rrsp_room
+
     # Do withdrawals
     if self.retired:
       # Bridging 
@@ -320,8 +328,6 @@ class Person(object):
 
     # Save
     if not self.retired:
-      earnings = sum(receipt.amount for receipt in year_rec.incomes
-                     if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
       earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
       proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
       fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]

@@ -102,7 +102,7 @@ MINIMUM_WITHDRAWAL_FRACTION = ExtendedDict(None,
      (95, 0.2000)])
 
 # TFSA (Tax-Free Savings Account) Parameters
-TFSA_ANNUAL_CONTRIBUTION_LIMIT = 5500 # Annual new TFSA contribution room in 2014 and subsequently
+TFSA_ANNUAL_CONTRIBUTION_LIMIT = 5500 # Annual new TFSA contribution room in 2014 and subsequently; nominal, indexed by personal CPI
 TFSA_INITIAL_CONTRIBUTION_LIMIT = 40000 # Contribution room when the TFSA fund starts in 2014. TFSA room is maintained by the program for contributions and new room.
 
 
