@@ -341,6 +341,10 @@ class Person(object):
     for fund in self.funds.values():
       fund.Update(year_rec)
 
+    # update the Person's view of RRSP and TFSA room
+    self.tfsa_room = year_rec.tfsa_room
+    self.rrsp_room = year_rec.rrsp_room
+
     # Calculate EI premium and CPP contributions
     year_rec = self.CalcPayrollDeductions(year_rec)
 
