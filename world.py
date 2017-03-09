@@ -122,7 +122,7 @@ FEDERAL_TAX_SCHEDULE = TaxSchedule(None, # Both the ordinate and abscissa values
  (43953, 6593),
  (87907, 16263),
  (136270, 28837),
- (2136270, 608837)])
+ (10136270, 2928837)])
 
 PROVINCIAL_TAX_FRACTION = 0.5
 
