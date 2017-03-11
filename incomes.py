@@ -119,16 +119,12 @@ class OAS(Income):
   def __init__(self):
     self.taxable = True
     self.income_type = INCOME_TYPE_OAS
-    self.last_year_cpi = 1
 
   def CalcAmount(self, year_rec):
     if year_rec.age >= world.CPP_EXPECTED_RETIREMENT_AGE:
-      return world.OAS_BENEFIT * self.last_year_cpi
+      return world.OAS_BENEFIT * year_rec.cpi
     else:
       return 0
-
-  def AnnualUpdate(self, year_rec):
-    self.last_year_cpi = year_rec.cpi
 
 
 class GIS(Income):

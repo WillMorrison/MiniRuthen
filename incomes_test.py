@@ -241,16 +241,13 @@ class IncomeTest(unittest.TestCase):
     self.assertIn(incomes.IncomeReceipt(world.OAS_BENEFIT, incomes.INCOME_TYPE_OAS),
                   year_rec.incomes)
 
-  def testOASUsesLastYearsCPI(self):
+  def testOASUsesCPI(self):
     income = incomes.OAS()
     year_rec = utils.YearRecord()
-    year_rec.age = 65
-    year_rec.cpi = 1
-    income.AnnualUpdate(year_rec)
     year_rec.age = 66
     year_rec.cpi = 1.02
     amount, _, _ = income.GiveMeMoney(year_rec)
-    self.assertEqual(amount, world.OAS_BENEFIT)
+    self.assertEqual(amount, world.OAS_BENEFIT * 1.02)
 
   def testGISCalcIncomeBaseUsesLesserIncome(self):
     income = incomes.GIS()
