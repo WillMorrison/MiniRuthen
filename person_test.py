@@ -284,7 +284,7 @@ class PersonTest(unittest.TestCase):
       self, earnings=0, oas=0, gis=0, cpp=0, ei=0,
       rrsp=0, bridging=0,nonreg=0, gains=0, eoy_gains=0,
       unapplied_losses=0, rrsp_contributions=0,
-      age=30, retired=False):
+      age=30, retired=False, cpi=1):
     """Set up a person and a year record in one go for testing income tax."""
     j_canuck = person.Person(strategy=self.default_strategy)
     j_canuck.capital_loss_carry_forward = unapplied_losses
@@ -305,6 +305,7 @@ class PersonTest(unittest.TestCase):
     year_rec.withdrawals.append(funds.WithdrawReceipt(bridging, 0, funds.FUND_TYPE_BRIDGING))
     year_rec.tax_receipts.append(funds.TaxReceipt(eoy_gains, funds.FUND_TYPE_NONREG))
     year_rec.deposits.append(funds.DepositReceipt(rrsp_contributions, funds.FUND_TYPE_RRSP))
+    year_rec.cpi = cpi
 
     year_rec = j_canuck.CalcPayrollDeductions(year_rec)
 
@@ -315,8 +316,28 @@ class PersonTest(unittest.TestCase):
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 11942.71, delta=0.1)
 
+  def testIncomeTaxEarningsOnlyWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(earnings=62000, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 10877.83, delta=0.1)
+
   def testIncomeTaxEIOnly(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(ei=7000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 0, delta=0.1)
+
+  def testIncomeTaxEIOnlyWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(ei=7000, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 0, delta=0.1)
+
+  def testIncomeTaxCPPOnly(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(cpp=10000)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 0, delta=0.1)
+
+  def testIncomeTaxCPPOnlyWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(cpp=10000, cpi=1.1)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 0, delta=0.1)
 
@@ -325,30 +346,93 @@ class PersonTest(unittest.TestCase):
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 8305.21, delta=0.1)
 
+  def testIncomeTaxEarningsAndContributionsWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(earnings=62000, rrsp_contributions=10000, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 7240.33, delta=0.1)
+
   def testIncomeTaxGainsOnly(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=40000, gains=25000, eoy_gains=15000)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxGainsOnlyWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=40000, gains=25000, eoy_gains=15000, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 31.63, delta=0.1)
 
   def testIncomeTaxGainsWithCarryForwardLosses(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=40000, gains=40000, unapplied_losses=2000)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 212.85, delta=0.1)
 
+  def testIncomeTaxGainsWithCarryForwardLossesWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(nonreg=50000, gains=50000, unapplied_losses=2000, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 931.64, delta=0.1)
+
   def testIncomeTaxRRSPOnly(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=20000, retired=True, age=65)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxRRSPOnlyWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=20000, retired=True, age=65, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 31.63, delta=0.1)
 
   def testIncomeTaxRRSPAndOASAndGIS(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=15000, oas=5000, gis=4000, retired=True, age=65)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
 
+  def testIncomeTaxRRSPAndOASAndGISWithInflation(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=15000, oas=5000, gis=4000, retired=True, age=65, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 31.63, delta=0.1)
+
   def testIncomeTaxRRSPAndBridging(self):
     j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=10000, bridging=10000, retired=True, age=62)
     tax_payable = j_canuck.CalcIncomeTax(year_rec)
     self.assertAlmostEqual(tax_payable, 437.85, delta=0.1)
+
+  def testIncomeTaxRRSPAndBridging(self):
+    j_canuck, year_rec = self.SetupYearRecForIncomeTax(rrsp=10000, bridging=10000, retired=True, age=62, cpi=1.1)
+    tax_payable = j_canuck.CalcIncomeTax(year_rec)
+    self.assertAlmostEqual(tax_payable, 31.63, delta=0.1)
+
+  def SetupForMeddleWithCash(self, age=30, cpi=1, retired=False, employed=True,
+                             rrsp=0, rrsp_room=0, tfsa=0, tfsa_room=0, nonreg=0):
+    j_canuck = person.Person()
+    year_rec = utils.YearRecord()
+
+    # Set working period fund amounts (these may be split later on)
+    j_canuck.funds["wp_rrsp"].amount = rrsp
+    j_canuck.funds["wp_tfsa"].amount = tfsa
+    j_canuck.funds["wp_nonreg"].amount = nonreg
+
+    # The following section roughly approximates Person.AnnualSetup()
+    j_canuck.age = age
+    year_rec.age = age
+    j_canuck.year = age - world.START_AGE + world.BASE_YEAR
+    year_rec.year = age - world.START_AGE + world.BASE_YEAR
+    j_canuck.cpi = cpi
+    year_rec.cpi = cpi
+
+    j_canuck.retired = retired
+    if retired:
+      j_canuck.OnRetirement()
+    year_rec.is_retired = retired
+    year_rec.is_employed = employed and not retired
+
+    year_rec.growth_rate = world.MEAN_INVESTMENT_RETURN
+
+    j_canuck.tfsa_room = tfsa_room
+    year_rec.tfsa_room = tfsa_room
+    j_canuck.rrsp_room = rrsp_room
+    year_rec.rrsp_room = rrsp_room
+
+    return j_canuck, year_rec
 
 
 if __name__ == '__main__':

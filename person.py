@@ -161,11 +161,11 @@ class Person(object):
     # CPP employee contribution
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
-    year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE), earnings) - world.YBE)
+    year_rec.pensionable_earnings = max(0, min(utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi, earnings) - world.YBE)
     year_rec.cpp_contribution = year_rec.pensionable_earnings * world.CPP_EMPLOYEE_RATE
 
     # EI premium
-    year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE))
+    year_rec.insurable_earnings = min(earnings, utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE) * year_rec.cpi)
     year_rec.ei_premium = year_rec.insurable_earnings * world.EI_PREMIUM_RATE
 
     return year_rec
@@ -197,15 +197,15 @@ class Person(object):
     # Employment Insurance Social Benefits Repayment
     ei_benefits = sum(receipt.amount for receipt in year_rec.incomes
                      if receipt.income_type == incomes.INCOME_TYPE_EI)
-    ei_base_amount = utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE) * world.EI_REPAYMENT_BASE_FRACTION
+    ei_base_amount = utils.Indexed(world.EI_MAX_INSURABLE_EARNINGS, year_rec.year, 1 + world.PARGE) * world.EI_REPAYMENT_BASE_FRACTION * year_rec.cpi
     ei_benefit_repayment = min(max(0, net_income_before_adjustments - ei_base_amount), ei_benefits) * world.EI_REPAYMENT_REDUCTION_RATE
 
     # Old Age Security and Net Federal Supplements Repayment
     oas_plus_gis = sum(receipt.amount for receipt in year_rec.incomes
                      if receipt.income_type in (incomes.INCOME_TYPE_OAS, incomes.INCOME_TYPE_GIS))
 
-    income_over_base_amount = max(0, max(0, net_income_before_adjustments-ei_benefit_repayment)-world.OAS_CLAWBACK_EXEMPTION) * world.OAS_CLAWBACK_RATE
-    oas_and_gis_repayment = min(oas_plus_gis, income_over_base_amount)
+    prospective_social_benefit_repayment = max(0, max(0, net_income_before_adjustments-ei_benefit_repayment)-world.SBR_BASE_AMOUNT*year_rec.cpi) * world.SBR_REDUCTION_RATE
+    oas_and_gis_repayment = min(oas_plus_gis, prospective_social_benefit_repayment)
 
     # Total Social Benefit Repayment
     total_social_benefit_repayment = ei_benefit_repayment + oas_and_gis_repayment
@@ -231,17 +231,18 @@ class Person(object):
     year_rec.taxable_income = taxable_income
 
     # Age amount
-    age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION) * world.AGE_AMOUNT_REDUCTION_RATE
-    age_amount = max(0, world.AGE_AMOUNT_MAXIMUM - age_amount_reduction)
+    age_amount_reduction = max(0, net_income - world.AGE_AMOUNT_EXEMPTION * year_rec.cpi) * world.AGE_AMOUNT_REDUCTION_RATE
+    age_amount = max(0, world.AGE_AMOUNT_MAXIMUM * year_rec.cpi - age_amount_reduction)
 
     # Federal non-refundable tax credits
     if year_rec.is_dead:
       federal_non_refundable_credits = 0
     else:
-      federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT + age_amount + year_rec.cpp_contribution + year_rec.ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
+      federal_non_refundable_credits = (world.BASIC_PERSONAL_AMOUNT * year_rec.cpi + age_amount + year_rec.cpp_contribution + year_rec.ei_premium) * world.NON_REFUNDABLE_CREDIT_RATE 
 
     # Federal tax on taxable income
-    net_federal_tax = max(0, world.FEDERAL_TAX_SCHEDULE[taxable_income] - federal_non_refundable_credits)
+    # Tax schedule is in real terms, so we need to convert to/from nominal values
+    net_federal_tax = max(0, world.FEDERAL_TAX_SCHEDULE[taxable_income / year_rec.cpi] * year_rec.cpi - federal_non_refundable_credits)
 
     # Tax payable
     tax_payable = net_federal_tax + total_social_benefit_repayment + net_federal_tax * world.PROVINCIAL_TAX_FRACTION
