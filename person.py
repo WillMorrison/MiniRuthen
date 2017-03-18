@@ -114,10 +114,11 @@ class Person(object):
     year_rec = utils.YearRecord()
     year_rec.age = self.age
     year_rec.year = self.year
+    year_rec.inflation = random.normalvariate(world.INFLATION_MEAN, world.INFLATION_STDDEV)
     if self.year == world.BASE_YEAR:
       self.cpi = 1
     else:
-      self.cpi = self.cpi * (1 + random.normalvariate(world.INFLATION_MEAN, world.INFLATION_STDDEV))
+      self.cpi = self.cpi * (1 + year_rec.inflation)
     self.cpi_history.append(self.cpi)
     year_rec.cpi = self.cpi
 

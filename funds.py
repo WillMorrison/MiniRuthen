@@ -88,7 +88,7 @@ class Fund(object):
     will not return a number so negative it would cause the fund amount to go
     negative.
     """
-    return max(self.amount * year_rec.growth_rate, -self.amount)
+    return max(self.amount * (1+year_rec.growth_rate) * (1+year_rec.inflation) - self.amount, -self.amount)
 
   def GetRoom(self, year_rec):
     return NO_ROOM_LIMIT
@@ -166,6 +166,9 @@ class RRSPBridging(Fund):
     deposited = 0 # No deposits allowed after account creation
     year_rec.deposits.append(DepositReceipt(deposited, self.fund_type))
     return (deposited, year_rec)
+
+  def Update(self, year_rec):
+    self.amount += self.Growth(year_rec)
 
 
 def ChainedDeposit(amount, funds, proportions, year_rec):

@@ -142,6 +142,14 @@ class FundTest(unittest.TestCase):
     year_rec.growth_rate = -1.2
     self.assertEqual(fund.Growth(year_rec), -20)
 
+  def testGrowthInflation(self):
+    fund = funds.Fund()
+    fund.amount = 20
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = 0
+    year_rec.growth_rate = 1
+    self.assertEqual(fund.Growth(year_rec), 20)
+
 
 class TFSATest(unittest.TestCase):
 
@@ -180,8 +188,9 @@ class TFSATest(unittest.TestCase):
     fund.amount = 20
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.2
+    year_rec.inflation = 1
     fund.Update(year_rec)
-    self.assertEqual(fund.amount, 24)
+    self.assertEqual(fund.amount, 48)
     self.assertEqual(fund.unrealized_gains, 0)
 
 
@@ -249,9 +258,10 @@ class RRSPTest(unittest.TestCase):
     fund.amount = 20
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0.2
+    year_rec.inflation = 1
     year_rec.incomes.append(incomes.IncomeReceipt(10000, incomes.INCOME_TYPE_EARNINGS))
     fund.Update(year_rec)
-    self.assertEqual(fund.amount, 24)
+    self.assertEqual(fund.amount, 48)
     self.assertEqual(fund.unrealized_gains, 0)
 
 
@@ -410,6 +420,16 @@ class RRSPBridgingTest(unittest.TestCase):
     self.assertEqual(fund.unrealized_gains, 0)
     self.assertIn(funds.WithdrawReceipt(15, 0, funds.FUND_TYPE_BRIDGING),
                   year_rec.withdrawals)
+
+  def testTFSAUpdate(self):
+    fund = funds.RRSPBridging()
+    fund.amount = 20
+    year_rec = utils.YearRecord()
+    year_rec.growth_rate = 0.2
+    year_rec.inflation = 1
+    fund.Update(year_rec)
+    self.assertEqual(fund.amount, 48)
+    self.assertEqual(fund.unrealized_gains, 0)
 
 
 class ChainingTest(unittest.TestCase):
