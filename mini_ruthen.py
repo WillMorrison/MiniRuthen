@@ -61,13 +61,13 @@ DEFAULT_STRATEGY_BOUNDS = StrategyBounds(
     0, 1,  # reinvestment_preference_tfsa_fraction
     )
 
-def RunPopulationWorker(strategy, gender, n, basic):
+def RunPopulationWorker(strategy, gender, n, basic, real_values):
   # Initialize accumulators
   accumulators = utils.AccumulatorBundle(basic_only=basic)
 
   # Run n Person instantiations
   for i in range(n):
-    p = person.Person(strategy, gender, basic)
+    p = person.Person(strategy, gender, basic, real_values)
     p.LiveLife()
 
     # Merge in the results to our accumulators
@@ -75,17 +75,17 @@ def RunPopulationWorker(strategy, gender, n, basic):
 
   return accumulators
 
-def RunPopulation(strategy, gender, n, basic, use_multiprocessing):
+def RunPopulation(strategy, gender, n, basic, real_values, use_multiprocessing):
   """Runs population multithreaded"""
   if not use_multiprocessing:
-    return RunPopulationWorker(strategy, gender, n, basic)
+    return RunPopulationWorker(strategy, gender, n, basic, real_values)
 
   # Initialize accumulators for calculation of fitness function
   accumulators = utils.AccumulatorBundle(basic_only=basic)
 
   # Farm work out to worker process pool
-  args = [(strategy, gender, n//os.cpu_count(), basic) for _ in range(os.cpu_count()-1)]
-  args.append((strategy, gender, n - n//os.cpu_count() * (os.cpu_count()-1), basic))
+  args = [(strategy, gender, n//os.cpu_count(), basic, real_values) for _ in range(os.cpu_count()-1)]
+  args.append((strategy, gender, n - n//os.cpu_count() * (os.cpu_count()-1), basic, real_values))
   with multiprocessing.Pool() as pool:
     for result in [pool.apply_async(RunPopulationWorker, arg) for arg in args]:
       accumulators.Merge(result.get())
@@ -181,7 +181,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
 
   def fitness_function(individual, weights):
     strategy = individual_to_strategy(individual)
-    accumulators = RunPopulation(strategy, gender, n, True, use_multiprocessing)
+    accumulators = RunPopulation(strategy, gender, n, True, True, use_multiprocessing)
     return sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))
   ga.fitness_function = fitness_function
 
@@ -234,7 +234,7 @@ def WriteFitnessFunctionCompositionTable(rows, out):
   for row in rows:
     writer.writerow(row)
 
-def WriteSummaryTable(gender, group_size, accumulators, weights, population_size, max_generations, out):
+def WriteSummaryTable(gender, group_size, accumulators, weights, population_size, max_generations, accumulate_nominal, out):
   writer = csv.writer(out, lineterminator='\n')
   writer.writerow(("measure", "value"))
   writer.writerow(("Population Size", population_size))
@@ -243,6 +243,7 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, population_size
   writer.writerow(("Fitness Function Value", sum(component.contribution for component in GetFitnessFunctionCompositionTableRows(accumulators, weights))))
   writer.writerow(("Gender", gender))
   writer.writerow(("Start Age", world.START_AGE))
+  writer.writerow(("Nominal Accumulators", accumulate_nominal))
   writer.writerow(("Real Return on Investments", world.MEAN_INVESTMENT_RETURN))
   writer.writerow(("Age at Death", accumulators.age_at_death.mean))
   writer.writerow(("Average Years Worked", accumulators.years_worked_with_earnings.mean))
@@ -360,6 +361,7 @@ if __name__ == '__main__':
   parser.add_argument('--gender', help='The gender of the people to simulate', choices=[person.MALE, person.FEMALE], default=person.FEMALE)
   parser.add_argument('--disable_multiprocessing', help='Only run on a single process', action='store_true', default=False)
   parser.add_argument('--basic_run', help='Only output the fitness function component and strategy tables', action='store_true', default=False)
+  parser.add_argument('--accumulate_nominal_values', help='Store nominal dollar amounts in accumulators. Ignored for optimization runs.', action='store_true', default=False)
 
   # Strategy parameters (validation runs only)
   parser.add_argument("--planned_retirement_age", help="strategy parameter", type=int, default=65)
@@ -532,11 +534,11 @@ if __name__ == '__main__':
     strategy = Optimize(args.gender, args.number, weights, args.population_size, args.max_generations, not args.disable_multiprocessing, bounds)
 
   # Run lives
-  accumulators = RunPopulation(strategy, args.gender, args.number, args.basic_run, not args.disable_multiprocessing)
+  accumulators = RunPopulation(strategy, args.gender, args.number, args.basic_run, not args.accumulate_nominal_values, not args.disable_multiprocessing)
 
   # Output reports
   if not args.basic_run:
-    WriteSummaryTable(args.gender, args.number, accumulators, weights, args.population_size if args.optimize else 1, args.max_generations if args.optimize else 1, sys.stdout, )
+    WriteSummaryTable(args.gender, args.number, accumulators, weights, args.population_size if args.optimize else 1, args.max_generations if args.optimize else 1, args.accumulate_nominal_values, sys.stdout, )
     sys.stdout.write('\n')
   WriteStrategyTable(strategy, sys.stdout)
   sys.stdout.write('\n')

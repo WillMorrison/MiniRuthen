@@ -31,7 +31,7 @@ INVOLUNTARILY_RETIRED = 3
 
 class Person(object):
   
-  def __init__(self, strategy, gender=FEMALE, basic_only=False):
+  def __init__(self, strategy, gender=FEMALE, basic_only=False, real_values=True):
     self.year = world.BASE_YEAR
     self.age = world.START_AGE
     self.gender = gender
@@ -39,6 +39,7 @@ class Person(object):
     self.cpi = 1  # Ignoring factor of 100 and StatsCan rounding rules here.
     self.cpi_history = []
     self.basic_only=basic_only
+    self.real_values=real_values
     self.employed_last_year = True
     self.retired = False
     # CAUTION: GIS must be the last income in the list.
@@ -387,7 +388,9 @@ class Person(object):
     """End of year calculations for a live person"""
     period = self.Period(year_rec)
     self.period_years[period] += 1
-    self.accumulators.UpdateConsumption(year_rec.consumption, self.year, self.retired, period)
+    cpi = year_rec.cpi if self.real_values else 1
+
+    self.accumulators.UpdateConsumption(year_rec.consumption/cpi, self.year, self.retired, period)
     earnings = sum(receipt.amount for receipt in year_rec.incomes
                    if receipt.income_type == incomes.INCOME_TYPE_EARNINGS)
     cpp = sum(receipt.amount for receipt in year_rec.incomes
@@ -423,10 +426,10 @@ class Person(object):
       self.no_assets_years += 1
 
     if self.age >= world.MINIMUM_RETIREMENT_AGE and not self.retired:
-      self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings)
+      self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings/cpi)
 
     if self.retired:
-      self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
+      self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income)/cpi)
       if assets <= 0:
         self.has_been_ruined=True
         self.accumulators.fraction_retirement_years_ruined.UpdateOneValue(1)
@@ -439,69 +442,75 @@ class Person(object):
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(1)
       else:
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(0)
-      self.accumulators.retirement_taxes.UpdateOneValue(year_rec.taxes_payable)
+      self.accumulators.retirement_taxes.UpdateOneValue(year_rec.taxes_payable/cpi)
       if cpp > 0:
-        self.accumulators.positive_cpp_benefits.UpdateOneValue(cpp)
+        self.accumulators.positive_cpp_benefits.UpdateOneValue(cpp/cpi)
     else: # Working period
-      self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income))
-      self.accumulators.earnings_working.UpdateOneValue(earnings)
-      self.accumulators.working_annual_ei_cpp_deductions.UpdateOneValue(year_rec.cpp_contribution + year_rec.ei_premium)
-      self.accumulators.working_taxes.UpdateOneValue(year_rec.taxes_payable)
+      self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income)/cpi)
+      self.accumulators.earnings_working.UpdateOneValue(earnings/cpi)
+      self.accumulators.working_annual_ei_cpp_deductions.UpdateOneValue(
+          (year_rec.cpp_contribution + year_rec.ei_premium)/cpi)
+      self.accumulators.working_taxes.UpdateOneValue(year_rec.taxes_payable/cpi)
       if earnings > 0:
         self.positive_earnings_years += 1
         self.accumulators.fraction_earnings_saved.UpdateOneValue(savings/earnings)
       if ei_benefits > 0:
         self.ei_years += 1
-        self.accumulators.positive_ei_benefits.UpdateOneValue(ei_benefits)
+        self.accumulators.positive_ei_benefits.UpdateOneValue(ei_benefits/cpi)
 
     if self.age >= world.MAXIMUM_RETIREMENT_AGE:
       if gis > 0:
         self.gis_years += 1
         self.has_received_gis = True
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(1)
-        self.accumulators.positive_gis_benefits.UpdateOneValue(gis)
+        self.accumulators.positive_gis_benefits.UpdateOneValue(gis/cpi)
       else:
         self.accumulators.fraction_retirement_years_receiving_gis.UpdateOneValue(0)
-      self.accumulators.benefits_gis.UpdateOneValue(gis)
+      self.accumulators.benefits_gis.UpdateOneValue(gis/cpi)
 
     if not self.basic_only:
-      self.accumulators.period_earnings.UpdateOneValue(earnings, period)
-      self.accumulators.period_cpp_benefits.UpdateOneValue(cpp, period)
-      self.accumulators.period_oas_benefits.UpdateOneValue(oas, period)
-      self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains, period)
-      self.accumulators.period_gis_benefits.UpdateOneValue(gis, period)
-      self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.total_social_benefit_repayment, period)
-      self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals, period)
-      self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals, period)
-      self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals, period)
-      self.accumulators.period_cpp_contributions.UpdateOneValue(year_rec.cpp_contribution, period)
-      self.accumulators.period_ei_premiums.UpdateOneValue(year_rec.ei_premium, period)
-      self.accumulators.period_taxable_income.UpdateOneValue(year_rec.taxable_income, period)
-      self.accumulators.period_income_tax.UpdateOneValue(year_rec.taxes_payable, period)
-      self.accumulators.period_sales_tax.UpdateOneValue(year_rec.sales_taxes, period)
-      self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits, period)
-      self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits, period)
-      self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits, period)
-      self.accumulators.period_fund_growth.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) * year_rec.growth_rate, period)
+      self.accumulators.period_earnings.UpdateOneValue(earnings/cpi, period)
+      self.accumulators.period_cpp_benefits.UpdateOneValue(cpp/cpi, period)
+      self.accumulators.period_oas_benefits.UpdateOneValue(oas/cpi, period)
+      self.accumulators.period_taxable_gains.UpdateOneValue(year_rec.taxable_capital_gains/cpi, period)
+      self.accumulators.period_gis_benefits.UpdateOneValue(gis/cpi, period)
+      self.accumulators.period_social_benefits_repaid.UpdateOneValue(year_rec.total_social_benefit_repayment/cpi, period)
+      self.accumulators.period_rrsp_withdrawals.UpdateOneValue(rrsp_withdrawals/cpi, period)
+      self.accumulators.period_tfsa_withdrawals.UpdateOneValue(tfsa_withdrawals/cpi, period)
+      self.accumulators.period_nonreg_withdrawals.UpdateOneValue(nonreg_withdrawals/cpi, period)
+      self.accumulators.period_cpp_contributions.UpdateOneValue(year_rec.cpp_contribution/cpi, period)
+      self.accumulators.period_ei_premiums.UpdateOneValue(year_rec.ei_premium/cpi, period)
+      self.accumulators.period_taxable_income.UpdateOneValue(year_rec.taxable_income/cpi, period)
+      self.accumulators.period_income_tax.UpdateOneValue(year_rec.taxes_payable/cpi, period)
+      self.accumulators.period_sales_tax.UpdateOneValue(year_rec.sales_taxes/cpi, period)
+      self.accumulators.period_rrsp_savings.UpdateOneValue(rrsp_deposits/cpi, period)
+      self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits/cpi, period)
+      self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits/cpi, period)
+      self.accumulators.period_fund_growth.UpdateOneValue(
+          sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) * year_rec.growth_rate / cpi, period)
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
-      self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings, self.age)
-      self.accumulators.income_tax_by_age.UpdateOneValue(year_rec.taxes_payable, self.age)
-      self.accumulators.sales_tax_by_age.UpdateOneValue(year_rec.sales_taxes, self.age)
-      self.accumulators.ei_premium_by_age.UpdateOneValue(year_rec.ei_premium, self.age)
-      self.accumulators.cpp_contributions_by_age.UpdateOneValue(year_rec.cpp_contribution, self.age)
-      self.accumulators.ei_benefits_by_age.UpdateOneValue(ei_benefits, self.age)
-      self.accumulators.cpp_benefits_by_age.UpdateOneValue(cpp, self.age)
-      self.accumulators.oas_benefits_by_age.UpdateOneValue(oas, self.age)
-      self.accumulators.gis_benefits_by_age.UpdateOneValue(gis, self.age)
-      self.accumulators.savings_by_age.UpdateOneValue(savings, self.age)
-      self.accumulators.rrsp_withdrawals_by_age.UpdateOneValue(rrsp_withdrawals, self.age)
-      self.accumulators.tfsa_withdrawals_by_age.UpdateOneValue(tfsa_withdrawals, self.age)
-      self.accumulators.nonreg_withdrawals_by_age.UpdateOneValue(nonreg_withdrawals, self.age)
-      self.accumulators.rrsp_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_RRSP), self.age)
-      self.accumulators.bridging_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_BRIDGING), self.age)
-      self.accumulators.tfsa_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_TFSA), self.age)
-      self.accumulators.nonreg_assets_by_age.UpdateOneValue(sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_NONREG), self.age)
+      self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings/cpi, self.age)
+      self.accumulators.income_tax_by_age.UpdateOneValue(year_rec.taxes_payable/cpi, self.age)
+      self.accumulators.sales_tax_by_age.UpdateOneValue(year_rec.sales_taxes/cpi, self.age)
+      self.accumulators.ei_premium_by_age.UpdateOneValue(year_rec.ei_premium/cpi, self.age)
+      self.accumulators.cpp_contributions_by_age.UpdateOneValue(year_rec.cpp_contribution/cpi, self.age)
+      self.accumulators.ei_benefits_by_age.UpdateOneValue(ei_benefits/cpi, self.age)
+      self.accumulators.cpp_benefits_by_age.UpdateOneValue(cpp/cpi, self.age)
+      self.accumulators.oas_benefits_by_age.UpdateOneValue(oas/cpi, self.age)
+      self.accumulators.gis_benefits_by_age.UpdateOneValue(gis/cpi, self.age)
+      self.accumulators.savings_by_age.UpdateOneValue(savings/cpi, self.age)
+      self.accumulators.rrsp_withdrawals_by_age.UpdateOneValue(rrsp_withdrawals/cpi, self.age)
+      self.accumulators.tfsa_withdrawals_by_age.UpdateOneValue(tfsa_withdrawals/cpi, self.age)
+      self.accumulators.nonreg_withdrawals_by_age.UpdateOneValue(nonreg_withdrawals/cpi, self.age)
+      self.accumulators.rrsp_assets_by_age.UpdateOneValue(
+          sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_RRSP)/cpi, self.age)
+      self.accumulators.bridging_assets_by_age.UpdateOneValue(
+          sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_BRIDGING)/cpi, self.age)
+      self.accumulators.tfsa_assets_by_age.UpdateOneValue(
+          sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_TFSA)/cpi, self.age)
+      self.accumulators.nonreg_assets_by_age.UpdateOneValue(
+          sum(fund.amount for fund in self.funds.values() if fund.fund_type == funds.FUND_TYPE_NONREG)/cpi, self.age)
 
     self.age += 1
     self.year += 1
@@ -509,21 +518,26 @@ class Person(object):
 
   def EndOfLifeCalcs(self, year_rec):
     """Calculations that happen upon death"""
+    cpi = year_rec.cpi if self.real_values else 1
     if self.retired:
       asset_comparison_level = self.assets_at_retirement
     else:
       asset_comparison_level = sum(fund.amount for fund in self.funds.values())
     estate = self.CalcEndOfLifeEstate(year_rec)
-    self.accumulators.distributable_estate.UpdateOneValue(estate)
+    self.accumulators.distributable_estate.UpdateOneValue(estate/cpi)
     self.accumulators.fraction_persons_ruined.UpdateOneValue(1 if self.has_been_ruined else 0)
     self.accumulators.fraction_retirees_receiving_gis.UpdateOneValue(1 if self.has_received_gis else 0)
     self.accumulators.fraction_retirees_ever_below_lico.UpdateOneValue(1 if self.has_experienced_income_under_lico else 0)
 
-    self.accumulators.fraction_persons_with_withdrawals_below_retirement_assets.UpdateOneValue(1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
+    self.accumulators.fraction_persons_with_withdrawals_below_retirement_assets.UpdateOneValue(
+        1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
     if self.retired:
-      self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
-    self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(self.total_lifetime_withdrawals - self.total_working_savings)
-    self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
+      self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(
+          1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
+    self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(
+        (self.total_lifetime_withdrawals - self.total_working_savings)/cpi)
+    self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(
+        min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
     if not self.basic_only:
       self.accumulators.age_at_death.UpdateOneValue(self.age)
@@ -538,10 +552,10 @@ class Person(object):
       for period in self.period_years:
         self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
       period = self.Period(year_rec)
-      self.accumulators.period_gross_estate.UpdateOneValue(year_rec.gross_estate, period)
-      self.accumulators.period_estate_taxes.UpdateOneValue(year_rec.estate_taxes, period)
-      self.accumulators.period_executor_funeral_costs.UpdateOneValue(year_rec.funeral_and_executor_fee, period)
-      self.accumulators.period_distributable_estate.UpdateOneValue(estate, period)
+      self.accumulators.period_gross_estate.UpdateOneValue(year_rec.gross_estate/cpi, period)
+      self.accumulators.period_estate_taxes.UpdateOneValue(year_rec.estate_taxes/cpi, period)
+      self.accumulators.period_executor_funeral_costs.UpdateOneValue(year_rec.funeral_and_executor_fee/cpi, period)
+      self.accumulators.period_distributable_estate.UpdateOneValue(estate/cpi, period)
 
   def LiveLife(self):
     """Run through one lifetime"""
