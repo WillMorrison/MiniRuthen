@@ -147,7 +147,7 @@ class FundTest(unittest.TestCase):
     fund.amount = 20
     year_rec = utils.YearRecord()
     year_rec.growth_rate = 0
-    year_rec.growth_rate = 1
+    year_rec.inflation = 1
     self.assertEqual(fund.Growth(year_rec), 20)
 
 
@@ -421,7 +421,7 @@ class RRSPBridgingTest(unittest.TestCase):
     self.assertIn(funds.WithdrawReceipt(15, 0, funds.FUND_TYPE_BRIDGING),
                   year_rec.withdrawals)
 
-  def testTFSAUpdate(self):
+  def testRRSPBridgingUpdate(self):
     fund = funds.RRSPBridging()
     fund.amount = 20
     year_rec = utils.YearRecord()
