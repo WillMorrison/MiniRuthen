@@ -1,3 +1,5 @@
+"""Copies fitness values from multiple optimization runs into one CSV file with one run per column."""
+
 import argparse
 import csv
 import logging
@@ -16,6 +18,7 @@ for f in args.files:
     continue
 
   col = []
+  # Copy the fitness values during the optimization
   for line in f:
     line = line.strip()
     if not line:
@@ -23,7 +26,19 @@ for f in args.files:
 
     row = line.split(',')
     col.append(row[1])
+  # Find the final run's fitness value and copy it in last
+  for line in f:
+    line = line.strip()
+    if line.startswith('Fitness Function Value,'):
+      row = line.split(',')
+      col.append(row[1])
+      break
+
   t.append(col)
+
+# Insert what will become the header column in the table once it's transposed
+header_row = ['Gen %d' % i for i in range(len(t[0])-1)] + ['Final']
+t.insert(0, header_row)
 
 w = csv.writer(sys.stdout)
 for row in zip(*t):
