@@ -178,6 +178,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
         children.append(reversed(gene_pair))
     child1, child2 = zip(*children)
     return child1, child2
+  ga.crossover = crossover
 
   def fitness_function(individual, weights):
     strategy = individual_to_strategy(individual)

@@ -396,12 +396,13 @@ MORTALITY_MULTIPLIER = 1 # Multiplier for mortality probabilities ( > 1.0 => mor
 # CED Drawdown table calculations
 CED_TABLE_MIN_AGE = 60
 CED_TABLE_MAX_AGE = 111
-_r = 1 / (1 + MEAN_INVESTMENT_RETURN)
+_r = (1 + INFLATION_MEAN) / ((1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN))
 _boy_fund = (1-_r**(CED_TABLE_MAX_AGE - CED_TABLE_MIN_AGE))/(1-_r)
 _table_items = []
-for age in range(CED_TABLE_MIN_AGE, CED_TABLE_MAX_AGE):
-  _table_items.append((age, 1/_boy_fund))
-  _boy_fund = (_boy_fund - 1) * ( 1 + MEAN_INVESTMENT_RETURN)
+for i, age in enumerate(range(CED_TABLE_MIN_AGE, CED_TABLE_MAX_AGE)):
+  _boy_payment = (1 + INFLATION_MEAN)**i
+  _table_items.append((age, _boy_payment/_boy_fund))
+  _boy_fund = (_boy_fund - _boy_payment) * ( 1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN)
 
 CED_PROPORTION = ExtendedDict(None, _table_items)
 
