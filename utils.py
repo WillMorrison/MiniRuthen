@@ -12,6 +12,7 @@ class YearRecord(object):
     self.deposits = []
     self.incomes = []
     self.tax_receipts = []
+    self.growth_records = []
 
     self.year = world.BASE_YEAR
     self.growth_rate = 0

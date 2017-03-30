@@ -20,6 +20,7 @@ FUND_TYPE_BRIDGING = "RRSP Bridging"
 DepositReceipt = collections.namedtuple('DepositReceipt', ('amount', 'fund_type'))
 WithdrawReceipt = collections.namedtuple('WithdrawReceipt', ('amount', 'gains', 'fund_type'))
 TaxReceipt = collections.namedtuple('TaxReceipt', ('gross_gain', 'fund_type'))
+GrowthRecord = collections.namedtuple('GrowthRecord', ('growth_amount', 'fund_type'))
 
 
 class Fund(object):
@@ -88,7 +89,9 @@ class Fund(object):
     will not return a number so negative it would cause the fund amount to go
     negative.
     """
-    return max(self.amount * (1+year_rec.growth_rate) * (1+year_rec.inflation) - self.amount, -self.amount)
+    growth = max(self.amount * (1+year_rec.growth_rate) * (1+year_rec.inflation) - self.amount, -self.amount)
+    year_rec.growth_records.append(GrowthRecord(growth, self.fund_type))
+    return growth
 
   def GetRoom(self, year_rec):
     return NO_ROOM_LIMIT

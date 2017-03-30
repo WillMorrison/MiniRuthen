@@ -54,6 +54,8 @@ class Person(object):
     self.has_been_ruined = False
     self.has_received_gis = False
     self.has_experienced_income_under_lico = False
+
+    # The following hold real dollar amounts
     self.assets_at_retirement = 0
     self.total_retirement_withdrawals = 0
     self.total_lifetime_withdrawals = 0
@@ -101,7 +103,7 @@ class Person(object):
 
     self.cd_drawdown_amount = sum(fund.amount for fund in (self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"])) * self.strategy.initial_cd_fraction
 
-    self.assets_at_retirement = sum(fund.amount for fund in self.funds.values())
+    self.assets_at_retirement = sum(fund.amount for fund in self.funds.values()) / year_rec.cpi
 
     if not self.basic_only:
       self.accumulators.fraction_persons_involuntarily_retired.UpdateOneValue(1 if self.age < self.strategy.planned_retirement_age else 0)
@@ -301,33 +303,33 @@ class Person(object):
       if "bridging" in self.funds and self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
         withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(self.bridging_annual_withdrawal, year_rec)
         cash += withdrawn
-        self.total_retirement_withdrawals += withdrawn
-        self.total_lifetime_withdrawals += withdrawn
+        self.total_retirement_withdrawals += withdrawn / year_rec.cpi
+        self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
       withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
-      self.total_retirement_withdrawals += withdrawn
-      self.total_lifetime_withdrawals += withdrawn
+      self.total_retirement_withdrawals += withdrawn / year_rec.cpi
+      self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
       # CED drawdown_strategy
       fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
       ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
       withdrawn, gains, year_rec = funds.ChainedWithdraw(ced_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
-      self.total_retirement_withdrawals += withdrawn
-      self.total_lifetime_withdrawals += withdrawn
+      self.total_retirement_withdrawals += withdrawn / year_rec.cpi
+      self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
     else:
-      if cash < world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction:
+      if cash < world.LICO_SINGLE_CITY_WP * year_rec.cpi * self.strategy.lico_target_fraction:
         # Attempt to withdraw difference from savings
-        amount_to_withdraw = world.LICO_SINGLE_CITY_WP * self.strategy.lico_target_fraction - cash
+        amount_to_withdraw = world.LICO_SINGLE_CITY_WP * year_rec.cpi * self.strategy.lico_target_fraction - cash
         proportions = (self.strategy.working_period_drawdown_tfsa_fraction, self.strategy.working_period_drawdown_nonreg_fraction, 1)
         fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
-        self.total_lifetime_withdrawals += withdrawn
+        self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
     # Save
     if not self.retired:
@@ -336,7 +338,7 @@ class Person(object):
       fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
       deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
       cash -= deposited
-      self.total_working_savings += deposited
+      self.total_working_savings += deposited / year_rec.cpi
       if deposited > 0:
         self.positive_savings_years += 1
 
@@ -419,7 +421,7 @@ class Person(object):
     savings = rrsp_deposits + tfsa_deposits + nonreg_deposits
     ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE)
 
-    if gross_income < world.LICO_SINGLE_CITY_WP:
+    if gross_income < world.LICO_SINGLE_CITY_WP * year_rec.cpi:
       self.gross_income_below_lico_years += 1
 
     if assets <= 0:
@@ -429,7 +431,7 @@ class Person(object):
       self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings/cpi)
 
     if self.retired:
-      self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income)/cpi)
+      self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP*year_rec.cpi-gross_income)/cpi)
       if assets <= 0:
         self.has_been_ruined=True
         self.accumulators.fraction_retirement_years_ruined.UpdateOneValue(1)
@@ -437,7 +439,7 @@ class Person(object):
         self.accumulators.fraction_retirement_years_ruined.UpdateOneValue(0)
       self.accumulators.fraction_retirement_years_below_ympe.UpdateOneValue(1 if assets < ympe else 0)
       self.accumulators.fraction_retirement_years_below_twice_ympe.UpdateOneValue(1 if assets < 2*ympe else 0)
-      if gross_income < world.LICO_SINGLE_CITY_WP:
+      if gross_income < world.LICO_SINGLE_CITY_WP * year_rec.cpi:
         self.has_experienced_income_under_lico = True
         self.accumulators.fraction_retirement_years_below_lico.UpdateOneValue(1)
       else:
@@ -446,7 +448,7 @@ class Person(object):
       if cpp > 0:
         self.accumulators.positive_cpp_benefits.UpdateOneValue(cpp/cpi)
     else: # Working period
-      self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP-gross_income)/cpi)
+      self.accumulators.lico_gap_working.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP*year_rec.cpi-gross_income)/cpi)
       self.accumulators.earnings_working.UpdateOneValue(earnings/cpi)
       self.accumulators.working_annual_ei_cpp_deductions.UpdateOneValue(
           (year_rec.cpp_contribution + year_rec.ei_premium)/cpi)
@@ -487,7 +489,7 @@ class Person(object):
       self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits/cpi, period)
       self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits/cpi, period)
       self.accumulators.period_fund_growth.UpdateOneValue(
-          sum(fund.amount for fund in self.funds.values() if fund.fund_type != funds.FUND_TYPE_BRIDGING) * year_rec.growth_rate / cpi, period)
+          sum(rec.growth_amount for rec in self.year_rec.growth_records) / cpi, period)
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings/cpi, self.age)
@@ -522,7 +524,7 @@ class Person(object):
     if self.retired:
       asset_comparison_level = self.assets_at_retirement
     else:
-      asset_comparison_level = sum(fund.amount for fund in self.funds.values())
+      asset_comparison_level = sum(fund.amount for fund in self.funds.values()) / year_rec.cpi
     estate = self.CalcEndOfLifeEstate(year_rec)
     self.accumulators.distributable_estate.UpdateOneValue(estate/cpi)
     self.accumulators.fraction_persons_ruined.UpdateOneValue(1 if self.has_been_ruined else 0)
@@ -535,7 +537,7 @@ class Person(object):
       self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(
           1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
     self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(
-        (self.total_lifetime_withdrawals - self.total_working_savings)/cpi)
+        (self.total_lifetime_withdrawals - self.total_working_savings)*(year_rec.cpi if not self.real_values else 1))
     self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(
         min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
