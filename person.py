@@ -489,7 +489,7 @@ class Person(object):
       self.accumulators.period_tfsa_savings.UpdateOneValue(tfsa_deposits/cpi, period)
       self.accumulators.period_nonreg_savings.UpdateOneValue(nonreg_deposits/cpi, period)
       self.accumulators.period_fund_growth.UpdateOneValue(
-          sum(rec.growth_amount for rec in self.year_rec.growth_records) / cpi, period)
+          sum(rec.growth_amount for rec in year_rec.growth_records) / cpi, period)
 
       self.accumulators.persons_alive_by_age.UpdateOneValue(1, self.age)
       self.accumulators.gross_earnings_by_age.UpdateOneValue(earnings/cpi, self.age)
