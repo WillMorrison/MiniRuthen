@@ -445,8 +445,8 @@ if __name__ == '__main__':
 
   # Genetic algorithm parameters
   parser.add_argument("--optimize", help="Run the optimizer", action='store_true', default=False)
-  parser.add_argument("--max_generations", help="Maximum genetic algorithm generations", type=int, default=100)
-  parser.add_argument("--population_size", help="Individuals in the genetic algorithm's population", type=int, default=50)
+  parser.add_argument("--max_generations", help="Maximum genetic algorithm generations", type=int, default=10)
+  parser.add_argument("--population_size", help="Individuals in the genetic algorithm's population", type=int, default=150)
 
   args = parser.parse_args()
 
