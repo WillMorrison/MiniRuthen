@@ -138,6 +138,9 @@ class QuantileAccumulator(object):
     if q < 0 or 1 < q:
       raise ValueError("quantile should be a number between 0 and 1, inclusive")
 
+    if len(self.bins) == 0:
+      return float('nan')
+
     # Cumulative sum of the counts at each bin point, treating the point as the center of the bin
     bin_counts = [0] + [b[1] for b in self.bins] + [0]
     cumsums = [0]

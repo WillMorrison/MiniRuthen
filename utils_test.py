@@ -1,3 +1,4 @@
+import math
 import unittest
 import utils
 import person
@@ -73,6 +74,16 @@ class UtilsTest(unittest.TestCase):
     self.assertEqual(acc.n, 0)
     self.assertEqual(acc.mean, 0)
     self.assertEqual(acc.M2, 0)
+
+  def testSummaryStatsAccumulatorNeverUpdated(self):
+    acc = utils.SummaryStatsAccumulator()
+
+    self.assertEqual(acc.n, 0)
+    self.assertEqual(acc.mean, 0)
+    self.assertEqual(acc.M2, 0)
+    self.assertTrue(math.isnan(acc.variance), msg="expected NaN")
+    self.assertTrue(math.isnan(acc.stddev), msg="expected NaN")
+    self.assertTrue(math.isnan(acc.stderr), msg="expected NaN")
 
   def testSummaryStatsAccumulatorUpdateAccumulator(self):
     acc1 = utils.SummaryStatsAccumulator()
@@ -200,6 +211,10 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.Quantile(0.4), 1.6666667)
     self.assertAlmostEqual(acc.Quantile(0.5), 2)
     self.assertAlmostEqual(acc.Quantile(0.6), 2.3333333)
+
+  def testQuantileAccumulatorNeverUpdated(self):
+    acc = utils.QuantileAccumulator()
+    self.assertTrue(math.isnan(acc.Quantile(0.1)), msg="expected NaN")
 
   def testKeyedAccumulatorSummaryStatsUpdateOneValue(self):
     acc = utils.KeyedAccumulator(utils.SummaryStatsAccumulator)
