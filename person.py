@@ -14,7 +14,6 @@ Strategy = collections.namedtuple("Strategy",
                                    "savings_rate",
                                    "savings_rrsp_fraction",
                                    "savings_tfsa_fraction",
-                                   "lico_target_fraction",
                                    "working_period_drawdown_tfsa_fraction",
                                    "working_period_drawdown_nonreg_fraction",
                                    "oas_bridging_fraction",
@@ -322,25 +321,25 @@ class Person(object):
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
       self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
     else:
-      if cash < world.LICO_SINGLE_CITY_WP * year_rec.cpi * self.strategy.lico_target_fraction:
+      target_cash = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi * self.strategy.savings_threshold
+      if cash < target_cash:
         # Attempt to withdraw difference from savings
-        amount_to_withdraw = world.LICO_SINGLE_CITY_WP * year_rec.cpi * self.strategy.lico_target_fraction - cash
+        amount_to_withdraw = target_cash - cash
         proportions = (self.strategy.working_period_drawdown_tfsa_fraction, self.strategy.working_period_drawdown_nonreg_fraction, 1)
         fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
         self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
-
-    # Save
-    if not self.retired:
-      earnings_to_save = max(earnings-self.strategy.savings_threshold, 0) * self.strategy.savings_rate
-      proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
-      fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
-      deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
-      cash -= deposited
-      self.total_working_savings += deposited / year_rec.cpi
-      if deposited > 0:
-        self.positive_savings_years += 1
+      else:
+        # Save
+        earnings_to_save = max(earnings - target_cash, 0) * self.strategy.savings_rate
+        proportions = (self.strategy.savings_rrsp_fraction, self.strategy.savings_tfsa_fraction, 1)
+        fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
+        deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
+        cash -= deposited
+        self.total_working_savings += deposited / year_rec.cpi
+        if deposited > 0:
+          self.positive_savings_years += 1
 
     # Update funds
     for fund in self.funds.values():

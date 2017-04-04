@@ -25,8 +25,6 @@ StrategyBounds = collections.namedtuple("StrategyBounds",
                                          "savings_rrsp_fraction_max",
                                          "savings_tfsa_fraction_min",
                                          "savings_tfsa_fraction_max",
-                                         "lico_target_fraction_min",
-                                         "lico_target_fraction_max",
                                          "working_period_drawdown_tfsa_fraction_min",
                                          "working_period_drawdown_tfsa_fraction_max",
                                          "working_period_drawdown_nonreg_fraction_min",
@@ -46,11 +44,10 @@ StrategyBounds = collections.namedtuple("StrategyBounds",
 
 DEFAULT_STRATEGY_BOUNDS = StrategyBounds(
     60, 65,  # planned_retirement_age
-    0, 1000000,  # savings_threshold
+    0, 10,  # savings_threshold
     0, 0.5,  # savings_rate
     0, 1,  # savings_rrsp_fraction
     0, 1,  # savings_tfsa_fraction
-    0, 5,  # lico_target_fraction
     0, 1,  # working_period_drawdown_tfsa_fraction
     0, 1,  # working_period_drawdown_nonreg_fraction
     0, 5,  # oas_bridging_fraction
@@ -101,7 +98,6 @@ def ValidateStrategy(strategy, bounds=DEFAULT_STRATEGY_BOUNDS):
       savings_rate=min(max(bounds.savings_rate_min, strategy.savings_rate), bounds.savings_rate_max),
       savings_rrsp_fraction=min(max(bounds.savings_rrsp_fraction_min, strategy.savings_rrsp_fraction), bounds.savings_rrsp_fraction_max),
       savings_tfsa_fraction=min(max(bounds.savings_tfsa_fraction_min, strategy.savings_tfsa_fraction), bounds.savings_tfsa_fraction_max),
-      lico_target_fraction=min(max(bounds.lico_target_fraction_min, strategy.lico_target_fraction), bounds.lico_target_fraction_max),
       working_period_drawdown_tfsa_fraction=min(max(bounds.working_period_drawdown_tfsa_fraction_min, strategy.working_period_drawdown_tfsa_fraction), bounds.working_period_drawdown_tfsa_fraction_max),
       working_period_drawdown_nonreg_fraction=min(max(bounds.working_period_drawdown_nonreg_fraction_min, strategy.working_period_drawdown_nonreg_fraction), bounds.working_period_drawdown_nonreg_fraction_max),
       oas_bridging_fraction=min(max(bounds.oas_bridging_fraction_min, strategy.oas_bridging_fraction), bounds.oas_bridging_fraction_max),
@@ -122,7 +118,6 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
         savings_rate=bounds.savings_rate_min + (bounds.savings_rate_max - bounds.savings_rate_min)*individual[2],
         savings_rrsp_fraction=bounds.savings_rrsp_fraction_min + (bounds.savings_rrsp_fraction_max - bounds.savings_rrsp_fraction_min)*individual[3],
         savings_tfsa_fraction=bounds.savings_tfsa_fraction_min + (bounds.savings_tfsa_fraction_max - bounds.savings_tfsa_fraction_min)*individual[4],
-        lico_target_fraction=bounds.lico_target_fraction_min + (bounds.lico_target_fraction_max - bounds.lico_target_fraction_min)*individual[5],
         working_period_drawdown_tfsa_fraction=bounds.working_period_drawdown_tfsa_fraction_min + (bounds.working_period_drawdown_tfsa_fraction_max - bounds.working_period_drawdown_tfsa_fraction_min)*individual[6],
         working_period_drawdown_nonreg_fraction=bounds.working_period_drawdown_nonreg_fraction_min + (bounds.working_period_drawdown_nonreg_fraction_max - bounds.working_period_drawdown_nonreg_fraction_min)*individual[7],
         oas_bridging_fraction=bounds.oas_bridging_fraction_min + (bounds.oas_bridging_fraction_max - bounds.oas_bridging_fraction_min)*individual[8],
@@ -343,7 +338,6 @@ def WriteStrategyTable(strategy, out):
   writer.writerow(("Savings Rate", strategy.savings_rate)),
   writer.writerow(("Savings RRSP Fraction", strategy.savings_rrsp_fraction)),
   writer.writerow(("Savings TFSA Fraction", strategy.savings_tfsa_fraction)),
-  writer.writerow(("LICO Target Fraction", strategy.lico_target_fraction)),
   writer.writerow(("Working Period Drawdown TFSA Fraction", strategy.working_period_drawdown_tfsa_fraction)),
   writer.writerow(("Working Period Drawdown NonReg Fraction", strategy.working_period_drawdown_nonreg_fraction)),
   writer.writerow(("OAS Bridging Fraction", strategy.oas_bridging_fraction)),
@@ -370,7 +364,6 @@ if __name__ == '__main__':
   parser.add_argument("--savings_rate", help="strategy parameter", type=float, default=0.1)
   parser.add_argument("--savings_rrsp_fraction", help="strategy parameter", type=float, default=0.1)
   parser.add_argument("--savings_tfsa_fraction", help="strategy parameter", type=float, default=0.2)
-  parser.add_argument("--lico_target_fraction", help="strategy parameter", type=float, default=1.0)
   parser.add_argument("--working_period_drawdown_tfsa_fraction", help="strategy parameter", type=float, default=0.5)
   parser.add_argument("--working_period_drawdown_nonreg_fraction", help="strategy parameter", type=float, default=0.5)
   parser.add_argument("--oas_bridging_fraction", help="strategy parameter", type=float, default=1.0)
@@ -391,8 +384,6 @@ if __name__ == '__main__':
   parser.add_argument("--savings_rrsp_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_rrsp_fraction_max)
   parser.add_argument("--savings_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_tfsa_fraction_min)
   parser.add_argument("--savings_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.savings_tfsa_fraction_max)
-  parser.add_argument("--lico_target_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.lico_target_fraction_min)
-  parser.add_argument("--lico_target_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.lico_target_fraction_max)
   parser.add_argument("--working_period_drawdown_tfsa_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_tfsa_fraction_min)
   parser.add_argument("--working_period_drawdown_tfsa_fraction_max", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_tfsa_fraction_max)
   parser.add_argument("--working_period_drawdown_nonreg_fraction_min", help="strategy parameter bound", type=float, default=DEFAULT_STRATEGY_BOUNDS.working_period_drawdown_nonreg_fraction_min)
@@ -461,8 +452,6 @@ if __name__ == '__main__':
       args.savings_rrsp_fraction_max,
       args.savings_tfsa_fraction_min,
       args.savings_tfsa_fraction_max,
-      args.lico_target_fraction_min,
-      args.lico_target_fraction_max,
       args.working_period_drawdown_tfsa_fraction_min,
       args.working_period_drawdown_tfsa_fraction_max,
       args.working_period_drawdown_nonreg_fraction_min,
@@ -486,7 +475,6 @@ if __name__ == '__main__':
       savings_rate=args.savings_rate,
       savings_rrsp_fraction=args.savings_rrsp_fraction,
       savings_tfsa_fraction=args.savings_tfsa_fraction,
-      lico_target_fraction=args.lico_target_fraction,
       working_period_drawdown_tfsa_fraction=args.working_period_drawdown_tfsa_fraction,
       working_period_drawdown_nonreg_fraction=args.working_period_drawdown_nonreg_fraction,
       oas_bridging_fraction=args.oas_bridging_fraction,

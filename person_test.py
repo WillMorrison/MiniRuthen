@@ -15,7 +15,6 @@ class PersonTest(unittest.TestCase):
         savings_rate=0.1,
         savings_rrsp_fraction=0.1,
         savings_tfsa_fraction=0.2,
-        lico_target_fraction=1.0,
         working_period_drawdown_tfsa_fraction=0.5,
         working_period_drawdown_nonreg_fraction=0.5,
         oas_bridging_fraction=1.0,
