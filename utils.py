@@ -287,6 +287,7 @@ class AccumulatorBundle(object):
     self.tfsa_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.nonreg_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.consumption_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.consumption_hist_by_age = KeyedAccumulator(QuantileAccumulator)
     self.rrsp_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.bridging_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.tfsa_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
@@ -310,6 +311,7 @@ class AccumulatorBundle(object):
       self.working_consumption_hist.UpdateOneValue(consumption)
     if hasattr(self, 'consumption_by_age'):
       self.consumption_by_age.UpdateOneValue(consumption, age)
+      self.consumption_hist_by_age.UpdateOneValue(consumption, age)
       self.period_consumption.UpdateOneValue(consumption, period)
 
   def Merge(self, bundle):
