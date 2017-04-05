@@ -100,7 +100,7 @@ class Person(object):
     self.funds["cd_nonreg"], self.funds["ced_nonreg"] = funds.SplitFund(self.funds["wp_nonreg"], funds.NonRegistered(), self.strategy.drawdown_ced_fraction * self.funds["wp_nonreg"].amount)
     del self.funds["wp_nonreg"]
 
-    self.cd_drawdown_amount = sum(fund.amount for fund in (self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"])) * self.strategy.initial_cd_fraction
+    self.cd_drawdown_amount = sum(fund.amount for fund in (self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"])) * self.strategy.initial_cd_fraction / year_rec.cpi
 
     self.assets_at_retirement = sum(fund.amount for fund in self.funds.values()) / year_rec.cpi
 
@@ -308,7 +308,7 @@ class Person(object):
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
-      withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount, fund_chain, proportions, year_rec)
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount * year_rec.cpi, fund_chain, proportions, year_rec)
       cash += withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
       self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
