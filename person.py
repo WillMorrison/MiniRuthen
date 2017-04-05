@@ -323,7 +323,7 @@ class Person(object):
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
       self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
     else:
-      target_cash = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi * self.strategy.savings_threshold
+      target_cash = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi * self.strategy.savings_threshold * world.EARNINGS_YMPE_FRACTION
       if cash < target_cash:
         # Attempt to withdraw difference from savings
         amount_to_withdraw = target_cash - cash
