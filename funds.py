@@ -124,17 +124,11 @@ class RRSP(Fund):
     self.room = world.RRSP_INITIAL_LIMIT
 
   def Update(self, year_rec):
-    # RRSP new room calculation TODO move this logic to person
-    # earning_receipts = [receipt for receipt in year_rec.incomes
-    #                     if receipt.income_type == incomes.INCOME_TYPE_EARNINGS]
-    # earnings_total = sum(receipt.amount for receipt in earning_receipts)
-    # self.room += min(utils.Indexed(world.RRSP_LIMIT, year_rec.year), world.RRSP_ACCRUAL_FRACTION * earnings_total)
-
     # Growth
     self.amount += self.Growth(year_rec)
 
     # calculate RRSP mandatory withdrawal
-    self.forced_withdraw = world.MINIMUM_WITHDRAWAL_FRACTION[year_rec.age+1] * self.amount
+    #self.forced_withdraw = world.MINIMUM_WITHDRAWAL_FRACTION[year_rec.age+1] * self.amount
 
   def GetRoom(self, year_rec):
     return year_rec.rrsp_room
