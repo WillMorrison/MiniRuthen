@@ -85,7 +85,7 @@ class CPP(Income):
     self.ympe_fractions = world.PRE_SIM_YMPE_FRACTIONS[:]
 
   def CalcAmount(self, year_rec):
-    return self.benefit_amount
+    return self.benefit_amount * year_rec.cpi
 
   def AnnualUpdate(self, year_rec):
     if not year_rec.is_retired:
@@ -113,6 +113,7 @@ class CPP(Income):
     elif person.age > world.CPP_EXPECTED_RETIREMENT_AGE:
       self.benefit_amount = (cpp_average_earnings * indexed_mpea * world.CPP_RETIREMENT_BENEFIT_FRACTION *
                              (1 + min(world.AAF_POST65_YEARS_CAP, person.age - world.CPP_EXPECTED_RETIREMENT_AGE) * world.AAF_POST65))
+    self.benefit_amount /= person.cpi
 
 class OAS(Income):
   

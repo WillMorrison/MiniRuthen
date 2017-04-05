@@ -157,6 +157,7 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 65
     fake_person.year = 2049
     fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
+    fake_person.cpi = 1
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 13694.3691932)
 
@@ -167,6 +168,7 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 65
     fake_person.year = 2049
     fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
+    fake_person.cpi = 1
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 14438.3065467)
 
@@ -177,6 +179,7 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 68
     fake_person.year = 2052
     fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
+    fake_person.cpi = 1
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 18624.5036950)
 
@@ -187,6 +190,7 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 72
     fake_person.year = 2056
     fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
+    fake_person.cpi = 1
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 21981.3428000)
 
@@ -197,6 +201,7 @@ class IncomeTest(unittest.TestCase):
     fake_person.age = 63
     fake_person.year = 2047
     fake_person.cpi_history = [1, 1, 1, 1, 1, 1]
+    fake_person.cpi = 1
     income.OnRetirement(fake_person)
     self.assertAlmostEqual(income.benefit_amount, 12115.6655268)
 
@@ -208,8 +213,9 @@ class IncomeTest(unittest.TestCase):
     fake_person.year = 2049
     # We use a silly value for the current year's CPI to check we aren't using it.
     fake_person.cpi_history = [1, 1.02, 1.0404, 1.061208, 1.08243216, 100]
+    fake_person.cpi = 100
     income.OnRetirement(fake_person)
-    self.assertAlmostEqual(income.benefit_amount, 15033.4266907)
+    self.assertAlmostEqual(income.benefit_amount, 150.334266907) # benefit_amount is stored as real $!
 
   def testOASBeforeRetirement(self):
     income = incomes.OAS()
