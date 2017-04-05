@@ -394,17 +394,19 @@ FEMALE_MORTALITY = ExtendedDict(None,
 MORTALITY_MULTIPLIER = 1 # Multiplier for mortality probabilities ( > 1.0 => more likely than usual to die)
 
 # CED Drawdown table calculations
+def GenerateCEDDrawdownTable(index_min, index_max):
+  _r = (1 + INFLATION_MEAN) / ((1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN))
+  _boy_fund = (1-_r**(index_max - index_min))/(1-_r)
+  _table_items = []
+  for i, age in enumerate(range(index_min, index_max)):
+    _boy_payment = (1 + INFLATION_MEAN)**i
+    _table_items.append((age, _boy_payment/_boy_fund))
+    _boy_fund = (_boy_fund - _boy_payment) * ( 1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN)
+  return ExtendedDict(None, _table_items)
+
 CED_TABLE_MIN_AGE = 60
 CED_TABLE_MAX_AGE = 111
-_r = (1 + INFLATION_MEAN) / ((1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN))
-_boy_fund = (1-_r**(CED_TABLE_MAX_AGE - CED_TABLE_MIN_AGE))/(1-_r)
-_table_items = []
-for i, age in enumerate(range(CED_TABLE_MIN_AGE, CED_TABLE_MAX_AGE)):
-  _boy_payment = (1 + INFLATION_MEAN)**i
-  _table_items.append((age, _boy_payment/_boy_fund))
-  _boy_fund = (_boy_fund - _boy_payment) * ( 1 + MEAN_INVESTMENT_RETURN) * (1 + INFLATION_MEAN)
-
-CED_PROPORTION = ExtendedDict(None, _table_items)
+CED_PROPORTION = GenerateCEDDrawdownTable(CED_TABLE_MIN_AGE, CED_TABLE_MAX_AGE)
 
 # Fate
 INVOLUNTARY_RETIREMENT_INCREMENT = 0.08

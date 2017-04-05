@@ -88,7 +88,7 @@ class Person(object):
         year_rec.deposits.append(funds.DepositReceipt(withdrawn, funds.FUND_TYPE_RRSP))
         self.rrsp_room -= withdrawn
 
-      self.bridging_annual_withdrawal = self.funds["bridging"].amount / (world.CPP_EXPECTED_RETIREMENT_AGE - self.age)
+      self.bridging_withdrawal_table = world.GenerateCEDDrawdownTable(self.age, world.CPP_EXPECTED_RETIREMENT_AGE)
 
     # Split each fund into a CED and a CD fund
     self.funds["cd_rrsp"], self.funds["ced_rrsp"] = funds.SplitFund(self.funds["wp_rrsp"], funds.RRSP(), self.strategy.drawdown_ced_fraction * self.funds["wp_rrsp"].amount)
@@ -300,7 +300,8 @@ class Person(object):
     if self.retired:
       # Bridging 
       if "bridging" in self.funds and self.age < world.CPP_EXPECTED_RETIREMENT_AGE:
-        withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(self.bridging_annual_withdrawal, year_rec)
+        bridging_withdrawal_amount = self.bridging_withdrawal_table[self.age] * self.funds["bridging"].amount
+        withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(bridging_withdrawal_amount, year_rec)
         cash += withdrawn
         self.total_retirement_withdrawals += withdrawn / year_rec.cpi
         self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
