@@ -6,7 +6,7 @@ import world
 import incomes
 
 # Special value indicating fund has no cap on deposits
-NO_ROOM_LIMIT = "No limit"
+NO_ROOM_LIMIT = float('inf')
 
 # Types of funds, used in receipts
 FUND_TYPE_NONE = "Generic Fund"
@@ -174,7 +174,7 @@ def ChainedDeposit(amount, funds, proportions, year_rec):
   return (-total_withdrawn, year_rec)
 
 def ChainedWithdraw(amount, funds, proportions, year_rec):
-  withdrawn, realized_gains, year_rec = ChainedTransaction(
+  withdrawn, realized_gains, year_rec = ProportionalTransaction(
       amount, funds, proportions, proportions, year_rec)
   return (withdrawn, realized_gains, year_rec)
 
@@ -193,6 +193,57 @@ def ChainedTransaction(amount, funds, withdrawal_proportions,
     elif total_withdrawn > amount:
       to_deposit = (total_withdrawn - amount) * deposit_proportion
       deposited, year_rec = fund.Deposit(to_deposit, year_rec)
+      total_withdrawn -= deposited
+  return (total_withdrawn, total_realized_gains, year_rec)
+
+def _CumulativeToNormalProportions(proportions):
+  new_proportions = []
+  for p in proportions:
+    new_proportions.append(p*(1-sum(new_proportions)))
+  return new_proportions
+
+def ProportionalTransaction(amount, funds, withdrawal_proportions,
+                            deposit_proportions, year_rec):
+  """Handles insufficient funds better than ChainedTransaction, but incompatible with forced withdrawals"""
+  withdrawing = amount > 0
+  if withdrawing:
+    proportions = _CumulativeToNormalProportions(withdrawal_proportions)
+    limits = [fund.amount for fund in funds]
+  else:
+    proportions = _CumulativeToNormalProportions(deposit_proportions)
+    limits = [fund.GetRoom(year_rec) for fund in funds]
+    amount = -amount
+
+  remaining_proportions = proportions[:]
+  amounts = [0 for _ in funds]
+  remaining_amount = amount
+  for _ in funds:
+    for i, limit in enumerate(limits):
+      if amounts[i] + remaining_proportions[i]*remaining_amount >= limit:
+        amounts[i] = limit
+        remaining_proportions[i] = 0
+      else:
+        amounts[i] += remaining_proportions[i]*remaining_amount
+    remaining_amount = amount - sum(amounts)
+    if remaining_amount == 0: # we assigned all the amounts to funds
+      break
+
+    # normalize remaining_proportions
+    normalizing_factor = sum(remaining_proportions)
+    if normalizing_factor == 0: # All funds reached limit
+      break
+    remaining_proportions = [p/normalizing_factor for p in remaining_proportions]
+
+  # do the actual withdrawals for the amounts calculated above
+  total_withdrawn = 0
+  total_realized_gains = 0
+  for fund, amount in zip(funds, amounts):
+    if withdrawing:
+      withdrawn, realized_gains, year_rec = fund.Withdraw(amount, year_rec)
+      total_withdrawn += withdrawn
+      total_realized_gains += realized_gains
+    else:
+      deposited, year_rec = fund.Deposit(amount, year_rec)
       total_withdrawn -= deposited
   return (total_withdrawn, total_realized_gains, year_rec)
 
