@@ -555,6 +555,25 @@ class ChainingTest(unittest.TestCase):
     self.assertAlmostEqual(tfsa.amount, 0)
     self.assertAlmostEqual(nonreg.amount, 18)
 
+  def testChainedWithdrawEmptyFunds(self):
+    rrsp = funds.RRSP()
+    rrsp.amount = 50
+    tfsa = funds.TFSA()
+    tfsa.amount = 50
+    nonreg = funds.NonRegistered()
+    nonreg.amount = 0
+    nonreg.unrealized_gains = 0
+    fund_chain = (rrsp, tfsa, nonreg)
+    proportions = (0.5, 0.5, 1)
+    withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
+                                                       proportions,
+                                                       utils.YearRecord())
+    self.assertAlmostEqual(withdrawn, 60)
+    self.assertAlmostEqual(gains, 0)
+    self.assertAlmostEqual(rrsp.amount, 10)
+    self.assertAlmostEqual(tfsa.amount, 30)
+    self.assertAlmostEqual(nonreg.amount, 0)
+
   @unittest.skip("no more forced withdraw")
   def testChainedWithdrawForcedWithdraw(self):
     rrsp = funds.RRSP()

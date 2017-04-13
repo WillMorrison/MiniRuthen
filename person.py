@@ -309,17 +309,19 @@ class Person(object):
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
-      year_rec.cd_drawdown_amount = self.cd_drawdown_amount * year_rec.cpi
-      withdrawn, gains, year_rec = funds.ChainedWithdraw(self.cd_drawdown_amount * year_rec.cpi, fund_chain, proportions, year_rec)
+      cd_drawdown_amount = self.cd_drawdown_amount * year_rec.cpi
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(cd_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
+      year_rec.cd_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
       self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
       # CED drawdown_strategy
       fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
-      year_rec.ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
-      withdrawn, gains, year_rec = funds.ChainedWithdraw(year_rec.ced_drawdown_amount, fund_chain, proportions, year_rec)
+      ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(ced_drawdown_amount, fund_chain, proportions, year_rec)
       cash += withdrawn
+      year_rec.ced_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
       self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
     else:
