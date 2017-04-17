@@ -83,7 +83,8 @@ class Person(object):
       if self.funds["bridging"].amount < requested:
         top_up_amount = min(self.rrsp_room, requested - self.funds["bridging"].amount)
         fund_chain = [self.funds["wp_nonreg"], self.funds["wp_tfsa"]]
-        withdrawn, _, year_rec = funds.ChainedWithdraw(top_up_amount, fund_chain, (1, 1), year_rec)
+        # Not using ChainedWithdraw because it can't express strict overflow
+        withdrawn, _, year_rec = funds.ChainedTransaction(top_up_amount, fund_chain, (1, 1), (1, 1), year_rec)
         self.funds["bridging"].amount += withdrawn
         year_rec.deposits.append(funds.DepositReceipt(withdrawn, funds.FUND_TYPE_RRSP))
         self.rrsp_room -= withdrawn

@@ -753,6 +753,18 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(tfsa.amount, 66)
     self.assertEqual(nonreg.amount, 4)
 
+  def assertSequenceAlmostEqual(self, first, second, places=7):
+    self.assertEqual([round(i, places) for i in first], [round(i, places) for i in second])
+
+  def testCumulativeToNormalProportions(self):
+    self.assertSequenceAlmostEqual(funds._CumulativeToNormalProportions([1/3, 1/2, 1]), [1/3, 1/3, 1/3])
+
+  def testCumulativeToNormalProportionsWithZero(self):
+    self.assertSequenceAlmostEqual(funds._CumulativeToNormalProportions([1/2, 0, 1]), [1/2, 0, 1/2])
+
+  def testCumulativeToNormalProportionsWithStrictOverflow(self):
+    self.assertSequenceAlmostEqual(funds._CumulativeToNormalProportions([1, 1]), [1, 0])
+
 
 class TestSplitFund(unittest.TestCase):
 

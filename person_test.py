@@ -222,7 +222,7 @@ class PersonTest(unittest.TestCase):
 
   @unittest.mock.patch.object(incomes.CPP, 'OnRetirement')
   def testOnRetirementBridgingFundNoRRSP(self, _):
-    strategy = self.default_strategy._replace(planned_retirement_age=60)
+    strategy = self.default_strategy._replace(planned_retirement_age=60, oas_bridging_fraction=1)
     j_canuck = person.Person(strategy=strategy)
     j_canuck.age = 60
     j_canuck.funds["wp_rrsp"].amount = 0
