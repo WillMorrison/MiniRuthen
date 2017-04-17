@@ -7,15 +7,30 @@ import sys
 
 parser = argparse.ArgumentParser(description='Copy fitness values into one CSV table')
 parser.add_argument('files', metavar='file', type=open, nargs='+', help='file to extract fitness values from')
+parser.add_argument('--extract_strategies', action='store_true', default=False, help='Extract strategy vectors instead of fitness values')
 
 args = parser.parse_args()
 
-t = []
-for f in args.files:
+STRATEGY_PARAMETERS = [
+  'Planned Retirement Age',
+  'Savings Threshold',
+  'Savings Rate',
+  'Savings RRSP Fraction',
+  'Savings TFSA Fraction',
+  'Working Period Drawdown TFSA Fraction',
+  'Working Period Drawdown NonReg Fraction',
+  'OAS Bridging Fraction',
+  'Drawdown CED Fraction',
+  'Initial CD Fraction',
+  'Drawdown Preferred RRSP Fraction',
+  'Drawdown Preferred TFSA Fraction',
+  'Reinvestment Preference TFSA Fraction',
+]
+
+def extract_fitness(f):
   header = next(f)
   if header != "Generation,Best Fitness,Fitness Mean,Fitness Stddev,Best Individual ID\n":
-    logging.warning("%s does not appear to contain fitness values", f.name)
-    continue
+    raise ValueError("%s does not appear to contain fitness values" % f.name)
 
   col = []
   # Copy the fitness values during the optimization
@@ -34,10 +49,42 @@ for f in args.files:
       col.append(row[1])
       break
 
-  t.append(col)
+  return col
+
+def extract_strategy(f):
+  # read forward to the strategy vector table
+  for line in f:
+    if line.startswith('parameter,value'):
+      break
+  else:
+    raise ValueError("%s does not appear to contain a strategy vector" % f.name)
+
+  sd = {}
+  for line in f:
+    line = line.strip()
+    if not line:
+      break
+    param, val = line.split(',')
+    sd[param] = val
+
+  return [sd[param] for param in STRATEGY_PARAMETERS]
+
+# Extract columns of values from each file
+t = []
+for f in args.files:
+  try:
+    if args.extract_strategies:
+      t.append(extract_strategy(f))
+    else:
+      t.append(extract_fitness(f))
+  except ValueError as e:
+    logging.warning(e)
 
 # Insert what will become the header column in the table once it's transposed
-header_row = ['Gen %d' % i for i in range(len(t[0])-1)] + ['Final']
+if args.extract_strategies:
+  header_row = STRATEGY_PARAMETERS
+else:
+  header_row = ['Gen %d' % i for i in range(len(t[0])-1)] + ['Final']
 t.insert(0, header_row)
 
 w = csv.writer(sys.stdout)
