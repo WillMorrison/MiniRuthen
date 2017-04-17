@@ -124,7 +124,7 @@ FEDERAL_TAX_SCHEDULE = TaxSchedule(None, # Both the ordinate and abscissa values
  (136270, 28837),
  (10136270, 2928837)])
 
-PROVINCIAL_TAX_FRACTION = 0.41 # Should be 0.39 for half-YMPE, 0.41 for YMPE, and 0.53 for twice-YMPE
+PROVINCIAL_TAX_FRACTION = 0.5 # Should be 0.39 for half-YMPE, 0.41 for YMPE, and 0.53 for twice-YMPE
 
 # End of life probate tax parameters
 PROBATE_RATE_CHANGE_LEVEL = 50000 # Treated as constant nominal value for all simulation years, i.e., not indexed
