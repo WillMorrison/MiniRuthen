@@ -21,7 +21,7 @@ Strategy = collections.namedtuple("Strategy",
                                    "initial_cd_fraction",
                                    "drawdown_preferred_rrsp_fraction",
                                    "drawdown_preferred_tfsa_fraction",
-                                   "reinvestment_preference_tfsa_fraction",])
+                                  ])
 
 EMPLOYED = 0
 UNEMPLOYED = 1

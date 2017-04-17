@@ -22,7 +22,7 @@ class PersonTest(unittest.TestCase):
         initial_cd_fraction=0.04,
         drawdown_preferred_rrsp_fraction=0.35,
         drawdown_preferred_tfsa_fraction=0.5,
-        reinvestment_preference_tfsa_fraction=0.8)
+        )
 
   def testCreatePersonHasIncomes(self):
     j_canuck = person.Person(strategy=self.default_strategy)
@@ -234,7 +234,7 @@ class PersonTest(unittest.TestCase):
     j_canuck.OnRetirement(year_rec)
 
     self.assertIn("bridging", j_canuck.funds)
-    self.assertEqual(j_canuck.funds["bridging"].amount, 5 * world.OAS_BENEFIT)
+    self.assertAlmostEqual(j_canuck.funds["bridging"].amount, 5 * world.OAS_BENEFIT)
     self.assertIn(funds.WithdrawReceipt(2 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_NONREG), year_rec.withdrawals)
     self.assertIn(funds.WithdrawReceipt(3 * world.OAS_BENEFIT, 0, funds.FUND_TYPE_TFSA), year_rec.withdrawals)
     self.assertAlmostEqual(j_canuck.rrsp_room, world.OAS_BENEFIT)

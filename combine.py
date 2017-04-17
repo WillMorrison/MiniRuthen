@@ -24,7 +24,6 @@ STRATEGY_PARAMETERS = [
   'Initial CD Fraction',
   'Drawdown Preferred RRSP Fraction',
   'Drawdown Preferred TFSA Fraction',
-  'Reinvestment Preference TFSA Fraction',
 ]
 
 def extract_fitness(f):
