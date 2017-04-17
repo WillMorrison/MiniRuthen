@@ -434,6 +434,26 @@ class RRSPBridgingTest(unittest.TestCase):
     self.assertEqual(fund.unrealized_gains, 0)
 
 
+def _SetUpChain(tfsa_amount=0, tfsa_room=0,
+                rrsp_amount=0, rrsp_room=0,
+                bridging_amount=0,
+                nonreg_amount=0, nonreg_gains=0):
+  year_rec = utils.YearRecord()
+  tfsa = funds.TFSA()
+  tfsa.amount = tfsa_amount
+  year_rec.tfsa_room = tfsa_room
+  rrsp = funds.RRSP()
+  rrsp.amount = rrsp_amount
+  year_rec.rrsp_room = rrsp_room
+  bridging = funds.RRSPBridging()
+  bridging.amount = bridging_amount
+  nonreg = funds.NonRegistered()
+  nonreg.amount = nonreg_amount
+  nonreg.unrealized_gains = nonreg_gains
+
+  return year_rec, tfsa, rrsp, bridging, nonreg 
+
+
 class ChainingTest(unittest.TestCase):
   
   def testChainedDeposit(self):
@@ -498,18 +518,13 @@ class ChainingTest(unittest.TestCase):
     self.assertEqual(nonreg.amount, 50)
 
   def testChainedWithdrawSufficientFunds(self):
-    rrsp = funds.RRSP()
-    rrsp.amount = 20
-    tfsa = funds.TFSA()
-    tfsa.amount = 50
-    nonreg = funds.NonRegistered()
-    nonreg.amount = 30
-    nonreg.unrealized_gains = 15
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=20, tfsa_amount=50, nonreg_amount=30, nonreg_gains=15)
     fund_chain = (rrsp, tfsa, nonreg)
     proportions = (0.1, 0.5, 1)
     withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
                                                        proportions,
-                                                       utils.YearRecord())
+                                                       year_rec)
     self.assertAlmostEqual(withdrawn, 60)
     self.assertAlmostEqual(gains, 13.5)
     self.assertAlmostEqual(rrsp.amount, 14)
@@ -518,61 +533,69 @@ class ChainingTest(unittest.TestCase):
     self.assertAlmostEqual(nonreg.unrealized_gains, 1.5)
 
   def testChainedWithdrawInsufficientFunds(self):
-    rrsp = funds.RRSP()
-    rrsp.amount = 20
-    tfsa = funds.TFSA()
-    tfsa.amount = 50
-    nonreg = funds.NonRegistered()
-    nonreg.amount = 20
-    nonreg.unrealized_gains = 10
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=20, tfsa_amount=50, nonreg_amount=20)
     fund_chain = (rrsp, tfsa, nonreg)
     proportions = (0.1, 0.5, 1)
     withdrawn, gains, year_rec = funds.ChainedWithdraw(160, fund_chain,
                                                        proportions,
-                                                       utils.YearRecord())
+                                                       year_rec)
     self.assertAlmostEqual(withdrawn, 90)
-    self.assertAlmostEqual(gains, 10)
     self.assertAlmostEqual(rrsp.amount, 0)
     self.assertAlmostEqual(tfsa.amount, 0)
     self.assertAlmostEqual(nonreg.amount, 0)
 
-  def testChainedWithdrawPartialInsufficientFunds(self):
-    rrsp = funds.RRSP()
-    rrsp.amount = 30
-    tfsa = funds.TFSA()
-    tfsa.amount = 16
-    nonreg = funds.NonRegistered()
-    nonreg.amount = 40
-    nonreg.unrealized_gains = 20
+  def testChainedWithdrawPartialInsufficientFundsTwoAdjustments(self):
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=21, tfsa_amount=16, nonreg_amount=40)
     fund_chain = (rrsp, tfsa, nonreg)
     proportions = (1/3, 0.5, 1)
     withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
                                                        proportions,
-                                                       utils.YearRecord())
+                                                       year_rec)
     self.assertAlmostEqual(withdrawn, 60)
-    self.assertAlmostEqual(gains, 11)
+    self.assertAlmostEqual(rrsp.amount, 0)
+    self.assertAlmostEqual(tfsa.amount, 0)
+    self.assertAlmostEqual(nonreg.amount, 17)
+
+  def testChainedWithdrawPartialInsufficientFundsOneAdjustment(self):
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=30, tfsa_amount=16, nonreg_amount=40)
+    fund_chain = (rrsp, tfsa, nonreg)
+    proportions = (1/3, 0.5, 1)
+    withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
+                                                       proportions,
+                                                       year_rec)
+    self.assertAlmostEqual(withdrawn, 60)
     self.assertAlmostEqual(rrsp.amount, 8)
     self.assertAlmostEqual(tfsa.amount, 0)
     self.assertAlmostEqual(nonreg.amount, 18)
 
-  def testChainedWithdrawEmptyFunds(self):
-    rrsp = funds.RRSP()
-    rrsp.amount = 50
-    tfsa = funds.TFSA()
-    tfsa.amount = 50
-    nonreg = funds.NonRegistered()
-    nonreg.amount = 0
-    nonreg.unrealized_gains = 0
+  def testChainedWithdrawOneZeroFund(self):
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=40, tfsa_amount=40, nonreg_amount=0)
     fund_chain = (rrsp, tfsa, nonreg)
-    proportions = (0.5, 0.5, 1)
+    proportions = (1/3, 0.5, 1)
     withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
                                                        proportions,
-                                                       utils.YearRecord())
+                                                       year_rec)
     self.assertAlmostEqual(withdrawn, 60)
-    self.assertAlmostEqual(gains, 0)
     self.assertAlmostEqual(rrsp.amount, 10)
-    self.assertAlmostEqual(tfsa.amount, 30)
+    self.assertAlmostEqual(tfsa.amount, 10)
     self.assertAlmostEqual(nonreg.amount, 0)
+
+  def testChainedWithdrawTwoZeroFunds(self):
+    year_rec, tfsa, rrsp, _, nonreg = _SetUpChain(
+        rrsp_amount=0, tfsa_amount=0, nonreg_amount=80)
+    fund_chain = (rrsp, tfsa, nonreg)
+    proportions = (1/3, 0.5, 1)
+    withdrawn, gains, year_rec = funds.ChainedWithdraw(60, fund_chain,
+                                                       proportions,
+                                                       year_rec)
+    self.assertAlmostEqual(withdrawn, 60)
+    self.assertAlmostEqual(rrsp.amount, 0)
+    self.assertAlmostEqual(tfsa.amount, 0)
+    self.assertAlmostEqual(nonreg.amount, 20)
 
   @unittest.skip("no more forced withdraw")
   def testChainedWithdrawForcedWithdraw(self):

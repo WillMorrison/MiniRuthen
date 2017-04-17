@@ -218,6 +218,7 @@ def ProportionalTransaction(amount, funds, withdrawal_proportions,
   amounts = [0 for _ in funds]
   remaining_amount = amount
   for _ in funds:
+    assert round(sum(remaining_proportions), 7) == 1, "Proportions don't sum to 1"
     for i, limit in enumerate(limits):
       if amounts[i] + remaining_proportions[i]*remaining_amount >= limit:
         amounts[i] = limit
