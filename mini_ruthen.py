@@ -237,6 +237,7 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, population_size
   writer.writerow(("Start Age", world.START_AGE))
   writer.writerow(("Nominal Accumulators", accumulate_nominal))
   writer.writerow(("Real Return on Investments", world.MEAN_INVESTMENT_RETURN))
+  writer.writerow(("Earnings Capacity YMPE Fraction", world.EARNINGS_YMPE_FRACTION))
   writer.writerow(("Age at Death", accumulators.age_at_death.mean))
   writer.writerow(("Average Years Worked", accumulators.years_worked_with_earnings.mean))
   writer.writerow(("Average Earnings Per Year Worked", accumulators.earnings_working.mean))
