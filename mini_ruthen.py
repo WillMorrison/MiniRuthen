@@ -259,6 +259,7 @@ def WriteSummaryTable(gender, group_size, accumulators, weights, population_size
   writer.writerow(("Replacement Rate (Consumption Basis)", accumulators.period_consumption.Query([person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean / accumulators.period_consumption.Query([person.EMPLOYED, person.UNEMPLOYED]).mean))
   writer.writerow(("Distributable Estate", accumulators.period_distributable_estate.Query([person.EMPLOYED, person.UNEMPLOYED, person.RETIRED, person.INVOLUNTARILY_RETIRED]).mean))
   writer.writerow(("Average Years With Negative Consumption", accumulators.years_with_negative_consumption.mean))
+  writer.writerow(("Average Net Government Revenue", accumulators.net_government_revenue.mean))
 
 def WritePeriodSpecificTable(accumulators, out):
   def GetRow(name, accumulator):

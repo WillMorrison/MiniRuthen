@@ -251,6 +251,7 @@ class AccumulatorBundle(object):
     self.years_income_below_lico = SummaryStatsAccumulator()
     self.years_with_no_assets = SummaryStatsAccumulator()
     self.years_with_negative_consumption = SummaryStatsAccumulator()
+    self.net_government_revenue = SummaryStatsAccumulator()
 
     # Accumulators for period specific tables
     self.period_years = KeyedAccumulator(SummaryStatsAccumulator)

@@ -66,6 +66,7 @@ class Person(object):
     self.gis_years = 0
     self.gross_income_below_lico_years = 0
     self.no_assets_years = 0
+    self.net_government_revenue = 0
 
     self.period_years = {EMPLOYED: 0, UNEMPLOYED: 0, RETIRED: 0, INVOLUNTARILY_RETIRED: 0}
 
@@ -475,6 +476,8 @@ class Person(object):
       self.accumulators.benefits_gis.UpdateOneValue(gis/cpi)
 
     if not self.basic_only:
+      self.net_government_revenue += (year_rec.taxes_payable + year_rec.sales_taxes - gis - oas) / year_rec.cpi
+
       self.accumulators.period_earnings.UpdateOneValue(earnings/cpi, period)
       self.accumulators.period_cpp_benefits.UpdateOneValue(cpp/cpi, period)
       self.accumulators.period_oas_benefits.UpdateOneValue(oas/cpi, period)
@@ -549,6 +552,8 @@ class Person(object):
         min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
     if not self.basic_only:
+      self.net_government_revenue += year_rec.estate_taxes / year_rec.cpi
+
       self.accumulators.age_at_death.UpdateOneValue(self.age)
       self.accumulators.years_worked_with_earnings.UpdateOneValue(self.positive_earnings_years)
       self.accumulators.fraction_persons_dying_before_retiring.UpdateOneValue(0 if self.retired else 1)
@@ -557,6 +562,7 @@ class Person(object):
       self.accumulators.years_receiving_gis.UpdateOneValue(self.gis_years)
       self.accumulators.years_income_below_lico.UpdateOneValue(self.gross_income_below_lico_years)
       self.accumulators.years_with_no_assets.UpdateOneValue(self.no_assets_years)
+      self.accumulators.net_government_revenue.UpdateOneValue(self.net_government_revenue)
 
       for period in self.period_years:
         self.accumulators.period_years.UpdateOneValue(self.period_years[period], period)
