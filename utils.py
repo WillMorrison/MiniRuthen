@@ -83,6 +83,10 @@ class SummaryStatsAccumulator(object):
     else:
       return float('nan')
 
+  @property
+  def total(self):
+    return self.n * self.mean
+
 
 class QuantileAccumulator(object):
   """This uses a streaming parallel histogram building algorithm described by

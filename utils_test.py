@@ -17,6 +17,7 @@ class UtilsTest(unittest.TestCase):
       acc.UpdateOneValue(i)
 
     self.assertEqual(acc.n, 25)
+    self.assertEqual(acc.total, 650)
     self.assertAlmostEqual(acc.mean, 26)
     self.assertAlmostEqual(acc.M2, 5200)
     self.assertAlmostEqual(acc.variance, 216.666666667)
@@ -29,6 +30,7 @@ class UtilsTest(unittest.TestCase):
       acc.UpdateOneValue(i)
 
     self.assertEqual(acc.n, 25)
+    self.assertEqual(acc.total, 25000000650)
     self.assertAlmostEqual(acc.mean, 1000000026)
     self.assertAlmostEqual(acc.M2, 5200)
     self.assertAlmostEqual(acc.variance, 216.666666667)
@@ -45,6 +47,7 @@ class UtilsTest(unittest.TestCase):
     acc1.UpdateSubsample(acc2.n, acc2.mean, acc2.M2)
 
     self.assertEqual(acc1.n, 25)
+    self.assertEqual(acc1.total, 650)
     self.assertAlmostEqual(acc1.mean, 26)
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
@@ -61,6 +64,7 @@ class UtilsTest(unittest.TestCase):
     acc1.UpdateSubsample(acc2.n, acc2.mean, acc2.M2)
 
     self.assertEqual(acc1.n, 25)
+    self.assertEqual(acc1.total, 25000000650)
     self.assertAlmostEqual(acc1.mean, 1000000026)
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
@@ -72,6 +76,7 @@ class UtilsTest(unittest.TestCase):
     acc.UpdateSubsample(0, 0, 0)
 
     self.assertEqual(acc.n, 0)
+    self.assertEqual(acc.total, 0)
     self.assertEqual(acc.mean, 0)
     self.assertEqual(acc.M2, 0)
 
@@ -79,6 +84,7 @@ class UtilsTest(unittest.TestCase):
     acc = utils.SummaryStatsAccumulator()
 
     self.assertEqual(acc.n, 0)
+    self.assertEqual(acc.total, 0)
     self.assertEqual(acc.mean, 0)
     self.assertEqual(acc.M2, 0)
     self.assertTrue(math.isnan(acc.variance), msg="expected NaN")
@@ -95,6 +101,7 @@ class UtilsTest(unittest.TestCase):
     acc1.UpdateAccumulator(acc2)
 
     self.assertEqual(acc1.n, 25)
+    self.assertEqual(acc1.total, 650)
     self.assertAlmostEqual(acc1.mean, 26)
     self.assertAlmostEqual(acc1.M2, 5200)
     self.assertAlmostEqual(acc1.variance, 216.666666667)
