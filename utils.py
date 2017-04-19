@@ -302,6 +302,16 @@ class AccumulatorBundle(object):
     self.nonreg_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.ced_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     self.cd_withdrawals_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.ced_requested_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.cd_requested_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.rrsp_ced_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.tfsa_ced_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.nonreg_ced_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.rrsp_cd_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.tfsa_cd_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.nonreg_cd_assets_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.ced_ruined_by_age = KeyedAccumulator(SummaryStatsAccumulator)
+    self.cd_ruined_by_age = KeyedAccumulator(SummaryStatsAccumulator)
     
   def UpdateConsumption(self, consumption, year, is_retired, period):
     discounted_consumption = Indexed(consumption, year, 1-world.DISCOUNT_RATE)

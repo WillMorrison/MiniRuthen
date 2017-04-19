@@ -324,11 +324,21 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
             accumulators.consumption_hist_by_age.Query([age]).Quantile(0.1),
             accumulators.consumption_hist_by_age.Query([age]).Quantile(0.9),
             accumulators.cd_withdrawals_by_age.Query([age]).mean,
+            accumulators.cd_requested_by_age.Query([age]).mean,
             accumulators.ced_withdrawals_by_age.Query([age]).mean,
+            accumulators.ced_requested_by_age.Query([age]).mean,
+            accumulators.rrsp_ced_assets_by_age.Query([age]).mean,
+            accumulators.tfsa_ced_assets_by_age.Query([age]).mean,
+            accumulators.nonreg_ced_assets_by_age.Query([age]).mean,
+            accumulators.rrsp_cd_assets_by_age.Query([age]).mean,
+            accumulators.tfsa_cd_assets_by_age.Query([age]).mean,
+            accumulators.nonreg_cd_assets_by_age.Query([age]).mean,
+            accumulators.ced_ruined_by_age.Query([age]).mean,
+            accumulators.cd_ruined_by_age.Query([age]).mean,
             ]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "RRSP Assets", "Bridging Assets", "TFSA Withdrawals", "TFSA Assets", "Non Registered Withdrawals", "NonRegistered Assets", "Consumption Mean", "Consumption 10th %ile", "Consumption 90th %ile", "CD Withdrawals", "CED Withdrawals"))
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "RRSP Assets", "Bridging Assets", "TFSA Withdrawals", "TFSA Assets", "Non Registered Withdrawals", "NonRegistered Assets", "Consumption Mean", "Consumption 10th %ile", "Consumption 90th %ile", "CD Withdrawals", "CD Requested", "CED Withdrawals", "CED Requested", "RRSP CED Assets", "TFSA CED Assets", "Non Registered CED Assets", "RRSP CD Assets", "TFSA CD Assets", "Non Registered CD Assets", "CED Ruined", "CD Ruined"))
   for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
     writer.writerow(GetRow(age))
 

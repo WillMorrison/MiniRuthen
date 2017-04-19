@@ -311,8 +311,8 @@ class Person(object):
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
       fund_chain = [self.funds["cd_rrsp"], self.funds["cd_tfsa"], self.funds["cd_nonreg"]]
-      cd_drawdown_amount = self.cd_drawdown_amount * year_rec.cpi
-      withdrawn, gains, year_rec = funds.ChainedWithdraw(cd_drawdown_amount, fund_chain, proportions, year_rec)
+      year_rec.cd_drawdown_request = self.cd_drawdown_amount * year_rec.cpi
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(year_rec.cd_drawdown_request, fund_chain, proportions, year_rec)
       cash += withdrawn
       year_rec.cd_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
@@ -320,8 +320,8 @@ class Person(object):
 
       # CED drawdown_strategy
       fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
-      ced_drawdown_amount = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
-      withdrawn, gains, year_rec = funds.ChainedWithdraw(ced_drawdown_amount, fund_chain, proportions, year_rec)
+      year_rec.ced_drawdown_request = sum(f.amount for f in fund_chain) * world.CED_PROPORTION[self.age]
+      withdrawn, gains, year_rec = funds.ChainedWithdraw(year_rec.ced_drawdown_request, fund_chain, proportions, year_rec)
       cash += withdrawn
       year_rec.ced_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
@@ -523,6 +523,20 @@ class Person(object):
       if self.retired:
         self.accumulators.cd_withdrawals_by_age.UpdateOneValue(year_rec.cd_drawdown_amount/cpi, self.age)
         self.accumulators.ced_withdrawals_by_age.UpdateOneValue(year_rec.ced_drawdown_amount/cpi, self.age)
+        self.accumulators.cd_requested_by_age.UpdateOneValue(year_rec.cd_drawdown_request/cpi, self.age)
+        self.accumulators.ced_requested_by_age.UpdateOneValue(year_rec.ced_drawdown_request/cpi, self.age)
+    
+        self.accumulators.rrsp_ced_assets_by_age.UpdateOneValue(self.funds["ced_rrsp"].amount/cpi, self.age)
+        self.accumulators.tfsa_ced_assets_by_age.UpdateOneValue(self.funds["ced_tfsa"].amount/cpi, self.age)
+        self.accumulators.nonreg_ced_assets_by_age.UpdateOneValue(self.funds["ced_nonreg"].amount/cpi, self.age)
+        self.accumulators.rrsp_cd_assets_by_age.UpdateOneValue(self.funds["cd_rrsp"].amount/cpi, self.age)
+        self.accumulators.tfsa_cd_assets_by_age.UpdateOneValue(self.funds["cd_tfsa"].amount/cpi, self.age)
+        self.accumulators.nonreg_cd_assets_by_age.UpdateOneValue(self.funds["cd_nonreg"].amount/cpi, self.age)
+
+        self.accumulators.ced_ruined_by_age.UpdateOneValue(
+            1 if sum(fund.amount for name, fund in self.funds.items() if name.startswith("ced")) == 0 else 0, self.age)
+        self.accumulators.cd_ruined_by_age.UpdateOneValue(
+            1 if sum(fund.amount for name, fund in self.funds.items() if name.startswith("cd")) == 0 else 0, self.age)
 
     self.age += 1
     self.year += 1
