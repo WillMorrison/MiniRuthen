@@ -43,7 +43,7 @@ StrategyBounds = collections.namedtuple("StrategyBounds",
 
 DEFAULT_STRATEGY_BOUNDS = StrategyBounds(
     60, 65,  # planned_retirement_age
-    0, 10,  # savings_threshold
+    0, 1.5,  # savings_threshold
     0, 0.5,  # savings_rate
     0, 1,  # savings_rrsp_fraction
     0, 1,  # savings_tfsa_fraction
