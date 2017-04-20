@@ -1,0 +1,11 @@
+--planned_retirement_age=65
+--savings_rate=0.14
+--savings_threshold=0.4
+--savings_rrsp_fraction=0.45
+--savings_tfsa_fraction=0.8182
+--oas_bridging_fraction=1.0
+--drawdown_ced_fraction=0.8
+--initial_cd_fraction=0.04
+--drawdown_preferred_rrsp_fraction=0.462
+--drawdown_preferred_tfsa_fraction=0.870
+--number=1000000
