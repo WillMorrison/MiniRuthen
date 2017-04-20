@@ -1,0 +1,4 @@
+--optimize
+--number=1000
+--population_size=150
+--max_generations=7
