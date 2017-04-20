@@ -1,5 +1,5 @@
 --planned_retirement_age=65
---savings_rate=0.14
+--savings_rate=0.095
 --savings_threshold=0.4
 --savings_rrsp_fraction=0.45
 --savings_tfsa_fraction=0.8182
