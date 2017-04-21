@@ -51,8 +51,8 @@ class Earnings(Income):
 
   def CalcAmount(self, year_rec):
     if year_rec.is_employed:
-      current_ympe = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi
-      earnings = max(random.normalvariate(current_ympe * world.EARNINGS_YMPE_FRACTION, world.YMPE_STDDEV * current_ympe), 0)
+      earnings_capacity = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi * world.EARNINGS_YMPE_FRACTION
+      earnings = max(random.normalvariate(earnings_capacity, world.YMPE_STDDEV * earnings_capacity), 0)
       return earnings
     else:
       return 0
