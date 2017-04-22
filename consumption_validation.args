@@ -6,6 +6,6 @@
 --oas_bridging_fraction=1.3
 --drawdown_ced_fraction=0.8
 --initial_cd_fraction=0.04
---drawdown_preferred_rrsp_fraction=0.444
---drawdown_preferred_tfsa_fraction=0.854
+--drawdown_preferred_rrsp_fraction=0.406
+--drawdown_preferred_tfsa_fraction=0.823
 --number=1000000
