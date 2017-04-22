@@ -159,7 +159,7 @@ class PersonTest(unittest.TestCase):
     # Not retired, bad random number
     j_canuck = person.Person(strategy=self.default_strategy)
     j_canuck.retired = False
-    with unittest.mock.patch('random.random', return_value=0.1):
+    with unittest.mock.patch('random.random', return_value=0.08):
       year_rec = j_canuck.AnnualSetup()
       self.assertFalse(year_rec.is_employed)
 
