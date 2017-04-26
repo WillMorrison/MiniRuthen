@@ -23,6 +23,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.variance, 216.666666667)
     self.assertAlmostEqual(acc.stddev, 14.719601444)
     self.assertAlmostEqual(acc.stderr, 2.9439203)
+    self.assertAlmostEqual(acc.cv, 0.5661385)
 
   def testSummaryStatsAccumulatorUpdateOneValueBigNumbers(self):
     acc = utils.SummaryStatsAccumulator()
@@ -36,6 +37,7 @@ class UtilsTest(unittest.TestCase):
     self.assertAlmostEqual(acc.variance, 216.666666667)
     self.assertAlmostEqual(acc.stddev, 14.719601444)
     self.assertAlmostEqual(acc.stderr, 2.9439203)
+    self.assertAlmostEqual(acc.cv, 0.0000000)
   
   def testSummaryStatsAccumulatorUpdateSubsample(self):
     acc1 = utils.SummaryStatsAccumulator()
