@@ -85,7 +85,16 @@ class SummaryStatsAccumulator(object):
 
   @property
   def total(self):
+    """Returns the sum of all updates."""
     return self.n * self.mean
+
+  @property
+  def cv(self):
+    """Returns the coefficient of variance, or NaN if mean is near 0."""
+    if abs(self.mean) > 0.01:
+      return self.stddev / self.mean
+    else:
+      return float('nan')
 
 
 class QuantileAccumulator(object):

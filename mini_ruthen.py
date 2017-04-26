@@ -335,10 +335,12 @@ def WriteAgeSpecificTable(accumulators, group_size, out):
             accumulators.nonreg_cd_assets_by_age.Query([age]).mean,
             accumulators.ced_ruined_by_age.Query([age]).mean,
             accumulators.cd_ruined_by_age.Query([age]).mean,
+            accumulators.gross_earnings_by_age.Query([age]).cv,
+            accumulators.consumption_by_age.Query([age]).cv,
             ]
 
   writer = csv.writer(out, lineterminator='\n')
-  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "RRSP Assets", "Bridging Assets", "TFSA Withdrawals", "TFSA Assets", "Non Registered Withdrawals", "NonRegistered Assets", "Consumption Mean", "Consumption 10th %ile", "Consumption 90th %ile", "CD Withdrawals", "CD Requested", "CED Withdrawals", "CED Requested", "RRSP CED Assets", "TFSA CED Assets", "Non Registered CED Assets", "RRSP CD Assets", "TFSA CD Assets", "Non Registered CD Assets", "CED Ruined", "CD Ruined"))
+  writer.writerow(("age", "Persons", "Gross Earnings", "Income Tax", "EI Premiums", "CPP Contrib", "Sales Tax", "EI Benefits", "CPP Benefits", "OAS Benefits", "GIS Benefits", "Total Savings", "RRSP Withdrawals", "RRSP Assets", "Bridging Assets", "TFSA Withdrawals", "TFSA Assets", "Non Registered Withdrawals", "NonRegistered Assets", "Consumption Mean", "Consumption 10th %ile", "Consumption 90th %ile", "CD Withdrawals", "CD Requested", "CED Withdrawals", "CED Requested", "RRSP CED Assets", "TFSA CED Assets", "Non Registered CED Assets", "RRSP CD Assets", "TFSA CD Assets", "Non Registered CD Assets", "CED Ruined", "CD Ruined", "Earnings CoV", "Consumption CoV"))
   for age in range(world.START_AGE, max(world.MALE_MORTALITY.keys())+1):
     writer.writerow(GetRow(age))
 
