@@ -24,6 +24,7 @@ STRATEGY_PARAMETERS = [
   'Initial CD Fraction',
   'Drawdown Preferred RRSP Fraction',
   'Drawdown Preferred TFSA Fraction',
+  'Fitness Function Value',
 ]
 
 def extract_fitness(f):
@@ -51,14 +52,18 @@ def extract_fitness(f):
   return col
 
 def extract_strategy(f):
+  sd = {}
   # read forward to the strategy vector table
   for line in f:
     if line.startswith('parameter,value'):
       break
+    elif line.startswith('Fitness Function Value'):
+      line = line.strip()
+      param, val = line.split(',')
+      sd[param] = val
   else:
     raise ValueError("%s does not appear to contain a strategy vector" % f.name)
 
-  sd = {}
   for line in f:
     line = line.strip()
     if not line:
