@@ -8,6 +8,7 @@ import sys
 parser = argparse.ArgumentParser(description='Copy fitness values into one CSV table')
 parser.add_argument('files', metavar='file', type=open, nargs='+', help='file to extract fitness values from')
 parser.add_argument('--extract_strategies', action='store_true', default=False, help='Extract strategy vectors instead of fitness values')
+parser.add_argument('--transpose', action='store_false', default=True, help='Transpose table before outputting')
 
 args = parser.parse_args()
 
@@ -92,5 +93,9 @@ else:
 t.insert(0, header_row)
 
 w = csv.writer(sys.stdout)
-for row in zip(*t):
-  w.writerow(row)
+if args.transpose:
+  for row in zip(*t):
+    w.writerow(row)
+else:
+  for row in t:
+    w.writerow(row)
