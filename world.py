@@ -151,8 +151,8 @@ DIVIDEND_TAX_CREDIT_RATE = 0.150198 # Fraction of dividends claimable as a non-r
 NON_REFUNDABLE_CREDIT_RATE = 0.15 # Equal to the rate at the lowest tax bracket
 
 # Economic Parameters
-MEAN_INVESTMENT_RETURN = 0.0532 # Mean of normal distribution for returns to funds.
-STD_INVESTMENT_RETURN = 0.1030 # Standard deviation for normal distribution for returns to funds
+MEAN_INVESTMENT_RETURN = 0.0266 # Mean of normal distribution for returns to funds.
+STD_INVESTMENT_RETURN = 0.02 # Standard deviation for normal distribution for returns to funds
 IMMEDIATELY_REALIZED_GAINS_FRACTION = 0.3 # Fraction of new growth that is immediately realized 
 UNREALIZED_GAINS_REALIZATION_FRACTION = 0.2 # Fraction of unrealized gains that become realized each year
 
