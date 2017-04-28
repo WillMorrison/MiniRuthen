@@ -8,6 +8,7 @@ import sys
 parser = argparse.ArgumentParser(description='Copy fitness values into one CSV table')
 parser.add_argument('files', metavar='file', type=open, nargs='+', help='file to extract fitness values from')
 parser.add_argument('--extract_strategies', action='store_true', default=False, help='Extract strategy vectors instead of fitness values')
+parser.add_argument('--transpose', action='store_false', default=True, help='Transpose table before outputting')
 
 args = parser.parse_args()
 
@@ -24,6 +25,7 @@ STRATEGY_PARAMETERS = [
   'Initial CD Fraction',
   'Drawdown Preferred RRSP Fraction',
   'Drawdown Preferred TFSA Fraction',
+  'Fitness Function Value',
 ]
 
 def extract_fitness(f):
@@ -51,14 +53,18 @@ def extract_fitness(f):
   return col
 
 def extract_strategy(f):
+  sd = {}
   # read forward to the strategy vector table
   for line in f:
     if line.startswith('parameter,value'):
       break
+    elif line.startswith('Fitness Function Value'):
+      line = line.strip()
+      param, val = line.split(',')
+      sd[param] = val
   else:
     raise ValueError("%s does not appear to contain a strategy vector" % f.name)
 
-  sd = {}
   for line in f:
     line = line.strip()
     if not line:
@@ -87,5 +93,9 @@ else:
 t.insert(0, header_row)
 
 w = csv.writer(sys.stdout)
-for row in zip(*t):
-  w.writerow(row)
+if args.transpose:
+  for row in zip(*t):
+    w.writerow(row)
+else:
+  for row in t:
+    w.writerow(row)
