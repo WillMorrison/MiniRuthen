@@ -91,7 +91,7 @@ def RunPopulation(strategy, gender, n, basic, real_values, use_multiprocessing):
 def ValidateStrategy(strategy, bounds=DEFAULT_STRATEGY_BOUNDS):
   """Do bounds checking on a strategy and clip anything outside the valid range"""
   return person.Strategy(
-      planned_retirement_age=int(min(max(bounds.planned_retirement_age_min, strategy.planned_retirement_age), bounds.planned_retirement_age_max)),
+      planned_retirement_age=round(min(max(bounds.planned_retirement_age_min, strategy.planned_retirement_age), bounds.planned_retirement_age_max)),
       savings_threshold=min(max(bounds.savings_threshold_min, strategy.savings_threshold), bounds.savings_threshold_max),
       savings_rate=min(max(bounds.savings_rate_min, strategy.savings_rate), bounds.savings_rate_max),
       savings_rrsp_fraction=min(max(bounds.savings_rrsp_fraction_min, strategy.savings_rrsp_fraction), bounds.savings_rrsp_fraction_max),
@@ -110,7 +110,7 @@ def Optimize(gender, n, weights, population_size, max_generations, use_multiproc
 
   def individual_to_strategy(individual):
     return ValidateStrategy(person.Strategy(
-        planned_retirement_age=bounds.planned_retirement_age_min + (bounds.planned_retirement_age_max - bounds.planned_retirement_age_min)*individual[0],
+        planned_retirement_age=round(bounds.planned_retirement_age_min + (bounds.planned_retirement_age_max - bounds.planned_retirement_age_min)*individual[0]),
         savings_threshold=bounds.savings_threshold_min + (bounds.savings_threshold_max - bounds.savings_threshold_min)*individual[1],
         savings_rate=bounds.savings_rate_min + (bounds.savings_rate_max - bounds.savings_rate_min)*individual[2],
         savings_rrsp_fraction=bounds.savings_rrsp_fraction_min + (bounds.savings_rrsp_fraction_max - bounds.savings_rrsp_fraction_min)*individual[3],
