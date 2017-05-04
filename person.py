@@ -57,8 +57,6 @@ class Person(object):
     # The following hold real dollar amounts
     self.assets_at_retirement = 0
     self.total_retirement_withdrawals = 0
-    self.total_lifetime_withdrawals = 0
-    self.total_working_savings = 0
 
     self.positive_earnings_years = 0
     self.positive_savings_years = 0
@@ -306,7 +304,6 @@ class Person(object):
         withdrawn, gains, year_rec = self.funds["bridging"].Withdraw(bridging_withdrawal_amount, year_rec)
         cash += withdrawn
         self.total_retirement_withdrawals += withdrawn / year_rec.cpi
-        self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
       # CD drawdown strategy
       proportions = (self.strategy.drawdown_preferred_rrsp_fraction, self.strategy.drawdown_preferred_tfsa_fraction, 1)
@@ -316,7 +313,6 @@ class Person(object):
       cash += withdrawn
       year_rec.cd_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
-      self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
 
       # CED drawdown_strategy
       fund_chain = [self.funds["ced_rrsp"], self.funds["ced_tfsa"], self.funds["ced_nonreg"]]
@@ -325,7 +321,6 @@ class Person(object):
       cash += withdrawn
       year_rec.ced_drawdown_amount = withdrawn
       self.total_retirement_withdrawals += withdrawn / year_rec.cpi
-      self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
     else:
       target_cash = utils.Indexed(world.YMPE, year_rec.year, 1 + world.PARGE) * year_rec.cpi * self.strategy.savings_threshold * world.EARNINGS_YMPE_FRACTION
       if cash < target_cash:
@@ -335,7 +330,6 @@ class Person(object):
         fund_chain = [self.funds["wp_tfsa"], self.funds["wp_nonreg"], self.funds["wp_rrsp"]]
         withdrawn, gains, year_rec = funds.ChainedWithdraw(amount_to_withdraw, fund_chain, proportions, year_rec)
         cash += withdrawn
-        self.total_lifetime_withdrawals += withdrawn / year_rec.cpi
       else:
         # Save
         earnings_to_save = max(earnings - target_cash, 0) * self.strategy.savings_rate
@@ -343,7 +337,6 @@ class Person(object):
         fund_chain = [self.funds["wp_rrsp"], self.funds["wp_tfsa"], self.funds["wp_nonreg"]]
         deposited, year_rec = funds.ChainedDeposit(earnings_to_save, fund_chain, proportions, year_rec)
         cash -= deposited
-        self.total_working_savings += deposited / year_rec.cpi
         if deposited > 0:
           self.positive_savings_years += 1
 
@@ -434,6 +427,7 @@ class Person(object):
 
     if self.age >= world.MINIMUM_RETIREMENT_AGE and not self.retired:
       self.accumulators.earnings_late_working_summary.UpdateOneValue(earnings/cpi)
+    self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue((total_withdrawals-savings)/cpi)
 
     if self.retired:
       self.accumulators.lico_gap_retired.UpdateOneValue(max(0, world.LICO_SINGLE_CITY_WP*year_rec.cpi-gross_income)/cpi)
@@ -560,8 +554,6 @@ class Person(object):
     if self.retired:
       self.accumulators.fraction_retirees_with_withdrawals_below_retirement_assets.UpdateOneValue(
           1 if self.total_retirement_withdrawals < asset_comparison_level else 0)
-    self.accumulators.lifetime_withdrawals_less_savings.UpdateOneValue(
-        (self.total_lifetime_withdrawals - self.total_working_savings)*(year_rec.cpi if not self.real_values else 1))
     self.accumulators.retirement_consumption_less_working_consumption.UpdateOneValue(
         min(0, self.accumulators.retired_consumption_summary.mean - world.FRACTION_WORKING_CONSUMPTION*self.accumulators.working_consumption_summary.mean))
 
