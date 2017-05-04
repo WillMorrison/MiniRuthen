@@ -1,3 +1,2 @@
 --consumption_discounted_lifetime=1.0
---average_lifetime_withdrawals_less_savings=1.0
---average_distributable_estate=-0.05
+--average_lifetime_withdrawals_less_savings=0.5
