@@ -1,4 +1,6 @@
 --consumption_median_lifetime=1.0
---std_consumption_lifetime=-0.5
+--std_consumption_lifetime=-0.75
+--std_consumption_working=-0.25
+--std_consumption_retired=-0.25
 --earnings_avg_late_working=-0.25
 --average_benefits_gis=-0.3
