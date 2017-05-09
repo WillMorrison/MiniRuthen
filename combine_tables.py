@@ -30,16 +30,20 @@ def values_across_files(directory, branch, personality):
   files = glob.glob(name_pattern)
   if not files:
     logging.warning('No files found for %s' % name_pattern)
-    return (0,0,0,0,0,0)
-  return tuple(statistics.mean(col) for col in zip(*[extract_values(f) for f in files]))
+    return ((0,0,0,0,0,0), (0,0,0,0,0,0))
+  file_values = [extract_values(f) for f in files]
+  return (tuple(statistics.mean(col) for col in zip(*file_values)),
+          tuple(statistics.stdev(col) for col in zip(*file_values)))
 
 t = []
 
 # Header column
 h = ['']
 for label in LABELS:
-  h.append(label + ' old normal')
-  h.append(label + ' new normal')
+  h.append(label + ' old normal mean')
+  h.append(label + ' old normal stddev')
+  h.append(label + ' new normal mean')
+  h.append(label + ' new normal stddev')
   h.append(label + ' diff')
 t.append(h)
 
@@ -47,11 +51,13 @@ t.append(h)
 for i, branch in enumerate(OLDNORMAL_BRANCHES):
   for p in PERSONALITIES:
     c = [p + ' ' + branch]
-    old = values_across_files(args.dir, branch, p)
-    new = values_across_files(args.dir, NEWNORMAL_BRANCHES[i], p)
+    old, old_dev = values_across_files(args.dir, branch, p)
+    new, new_dev = values_across_files(args.dir, NEWNORMAL_BRANCHES[i], p)
     for j in range(len(old)):
       c.append(old[j])
+      c.append(old_dev[j])
       c.append(new[j])
+      c.append(new_dev[j])
       c.append(old[j]-new[j])
     t.append(c)
 
